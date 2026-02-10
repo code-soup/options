@@ -49,12 +49,12 @@ class Manager {
 	/**
 	 * Meta key for storing page capability
 	 */
-	public const META_KEY_CAPABILITY = '_codesoup_capability';
+	public const META_KEY_CAPABILITY = '_codesoup_options_capability';
 
 	/**
 	 * Meta key for storing page description
 	 */
-	public const META_KEY_DESCRIPTION = '_codesoup_description';
+	public const META_KEY_DESCRIPTION = '_codesoup_options_description';
 
 	/**
 	 * Default configuration values
@@ -66,6 +66,7 @@ class Manager {
 		'revisions'      => false,
 		'parent_menu'    => null,
 		'cache_duration' => HOUR_IN_SECONDS,
+		'debug'          => false,
 		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,
@@ -385,7 +386,7 @@ class Manager {
 		);
 
 		foreach ( $pages as $page ) {
-			$post_name = $config['prefix'] . $page->id;
+			$post_name = self::normalize_slug( $config['prefix'] . $page->id );
 
 			$page_data = array(
 				'id'          => $page->id,
@@ -442,7 +443,7 @@ class Manager {
 
 		$cache_group    = 'cs_opt_' . $this->config['prefix'];
 		$this->cache    = new Cache( $this->instance_key, $cache_group, $this->config['cache_duration'] );
-		$this->logger   = new Logger( $this->instance_key );
+		$this->logger   = new Logger( $this->instance_key, $this->config['debug'] );
 
 		$this->load_integrations();
 	}
@@ -539,6 +540,13 @@ class Manager {
 		if ( isset( $this->config['revisions'] ) && ! is_bool( $this->config['revisions'] ) ) {
 			throw new \InvalidArgumentException(
 				__( 'Config "revisions" must be a boolean.', 'codesoup-options' )
+			);
+		}
+
+		// Validate debug is boolean.
+		if ( isset( $this->config['debug'] ) && ! is_bool( $this->config['debug'] ) ) {
+			throw new \InvalidArgumentException(
+				__( 'Config "debug" must be a boolean.', 'codesoup-options' )
 			);
 		}
 
@@ -1226,10 +1234,10 @@ class Manager {
 	/**
 	 * Set submenu file for submenu highlighting
 	 *
-	 * @param string $submenu_file Submenu file.
-	 * @return string
+	 * @param string|null $submenu_file Submenu file.
+	 * @return string|null
 	 */
-	public function set_submenu_file( string $submenu_file ): string {
+	public function set_submenu_file( ?string $submenu_file ): ?string {
 		global $current_screen;
 
 		if ( ! $current_screen || $current_screen->post_type !== $this->config['post_type'] ) {
@@ -1291,14 +1299,11 @@ class Manager {
 				continue;
 			}
 
-			$post_name = $post->post_name;
-			$prefix    = $this->get_post_name_prefix();
+			$page_id = $this->extract_page_id_from_post_name( $post->post_name );
 
-			if ( strpos( $post_name, $prefix ) !== 0 ) {
+			if ( ! $page_id ) {
 				continue;
 			}
-
-			$page_id = substr( $post_name, strlen( $prefix ) );
 
 			if ( $page_id === $metabox->page ) {
 				$metabox_id = sprintf(
@@ -1382,13 +1387,33 @@ class Manager {
 	}
 
 	/**
+	 * Normalize slug by converting underscores to dashes
+	 *
+	 * @param string $slug Slug to normalize.
+	 * @return string Normalized slug with dashes.
+	 */
+	public static function normalize_slug( string $slug ): string {
+		return str_replace( '_', '-', sanitize_title( $slug ) );
+	}
+
+	/**
+	 * Denormalize slug by converting dashes to underscores
+	 *
+	 * @param string $slug Slug to denormalize.
+	 * @return string Denormalized slug with underscores.
+	 */
+	public static function denormalize_slug( string $slug ): string {
+		return str_replace( '-', '_', $slug );
+	}
+
+	/**
 	 * Get post name from page ID
 	 *
 	 * @param string $page_id Page identifier.
 	 * @return string
 	 */
 	private function get_post_name( string $page_id ): string {
-		return $this->config['prefix'] . $page_id;
+		return self::normalize_slug( $this->config['prefix'] . $page_id );
 	}
 
 	/**
@@ -1398,10 +1423,11 @@ class Manager {
 	 * @return string|null Page ID or null if prefix doesn't match.
 	 */
 	private function extract_page_id_from_post_name( string $post_name ): ?string {
-		$prefix = $this->config['prefix'];
+		$normalized_prefix = self::normalize_slug( $this->config['prefix'] );
 
-		if ( strpos( $post_name, $prefix ) === 0 ) {
-			return substr( $post_name, strlen( $prefix ) );
+		if ( strpos( $post_name, $normalized_prefix ) === 0 ) {
+			$page_id_normalized = substr( $post_name, strlen( $normalized_prefix ) );
+			return self::denormalize_slug( $page_id_normalized );
 		}
 
 		return null;

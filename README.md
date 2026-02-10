@@ -130,6 +130,7 @@ Manager::create(
 		'parent_menu'    => null,
 		'revisions'      => true,
 		'cache_duration' => HOUR_IN_SECONDS,
+		'debug'          => false,
 		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,

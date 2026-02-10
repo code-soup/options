@@ -177,6 +177,7 @@ array(
 	'parent_menu'    => null,                       // Parent menu slug for submenu
 	'revisions'      => true,                       // Enable revision history
 	'cache_duration' => HOUR_IN_SECONDS,            // Cache duration in seconds
+	'debug'          => false,                      // Enable error logging (default: false)
 	'integrations'   => array(                      // Integration configuration
 		'acf' => array(
 			'enabled' => true,
@@ -185,6 +186,32 @@ array(
 	),
 )
 ```
+
+### `debug` - Error Logging
+
+Controls whether the plugin logs errors, warnings, and info messages to the PHP error log.
+
+**Behavior:**
+- **`false`** (default): All logging is disabled. No messages will be written to error_log
+- **`true`**: Logging is enabled. Errors, warnings, and info messages will be written to error_log
+
+**Examples:**
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'debug' => false,
+	)
+);
+```
+
+**Notes:**
+- Debug messages are only logged when both `debug` is `true` AND `WP_DEBUG` is enabled
+- When `debug` is `false`, no messages are logged regardless of log level
+- Useful for production environments where you want to suppress all plugin logging
+
+---
 
 ### `parent_menu` - Menu Placement
 

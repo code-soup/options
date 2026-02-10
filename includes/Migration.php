@@ -123,9 +123,11 @@ class Migration {
 			// Update post_name (prefix) if changed.
 			if ( $old_prefix && $old_prefix !== $new_prefix ) {
 				$old_name = $post->post_name;
-				if ( strpos( $old_name, $old_prefix ) === 0 ) {
-					$page_id  = substr( $old_name, strlen( $old_prefix ) );
-					$new_name = $new_prefix . $page_id;
+				$old_prefix_normalized = Manager::normalize_slug( $old_prefix );
+				if ( strpos( $old_name, $old_prefix_normalized ) === 0 ) {
+					$page_id_normalized = substr( $old_name, strlen( $old_prefix_normalized ) );
+					$page_id            = Manager::denormalize_slug( $page_id_normalized );
+					$new_name           = Manager::normalize_slug( $new_prefix . $page_id );
 
 					$result = wp_update_post(
 						array(
@@ -167,10 +169,11 @@ class Migration {
 			// Sync capability if provided in new_pages.
 			if ( ! empty( $capability_map ) ) {
 				$post_name = get_post_field( 'post_name', $post_id );
-				$prefix    = $new_prefix;
+				$prefix_normalized = Manager::normalize_slug( $new_prefix );
 
-				if ( strpos( $post_name, $prefix ) === 0 ) {
-					$page_id = substr( $post_name, strlen( $prefix ) );
+				if ( strpos( $post_name, $prefix_normalized ) === 0 ) {
+					$page_id_normalized = substr( $post_name, strlen( $prefix_normalized ) );
+					$page_id            = Manager::denormalize_slug( $page_id_normalized );
 
 					if ( isset( $capability_map[ $page_id ] ) ) {
 						$new_capability = $capability_map[ $page_id ];
