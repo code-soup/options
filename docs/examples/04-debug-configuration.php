@@ -132,4 +132,3 @@ $no_acf_manager->init();
  * 3. Use conditional debug based on WP_DEBUG or environment variables
  * 4. Disable unused integrations to prevent unnecessary checks and notices
  */
-

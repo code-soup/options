@@ -112,7 +112,7 @@ class CMB2Integration implements IntegrationInterface {
 	/**
 	 * Add fields for a specific page
 	 *
-	 * @param \CMB2 $cmb CMB2 instance.
+	 * @param \CMB2  $cmb CMB2 instance.
 	 * @param string $page_id Page ID.
 	 * @return void
 	 */
@@ -157,7 +157,8 @@ $manager = Manager::create(
 				'class'   => 'CMB2Integration',
 			),
 		),
-
+	)
+);
 
 $manager->register_page(
 	array(
@@ -169,37 +170,37 @@ $manager->register_page(
 
 $manager->init();
 
-// Retrieve options (same API regardless of integration).
-$manager = Manager::get( 'cmb2_settings' );
-$options = $manager->get_options( 'general' );
+		// Retrieve options (same API regardless of integration).
+		$manager = Manager::get( 'cmb2_settings' );
+		$options = $manager->get_options( 'general' );
 
-// ============================================================================
-// Key Points for Custom Integrations
-// ============================================================================
+		// ============================================================================
+		// Key Points for Custom Integrations
+		// ============================================================================
 
-/**
- * 1. Implement IntegrationInterface
- *    - Required methods: __construct(), is_available(), register_hooks(), get_name()
- *
- * 2. Check availability in is_available()
- *    - Return false if the framework is not installed/active
- *
- * 3. Register hooks in register_hooks()
- *    - Hook into the framework's registration system
- *    - Show admin notice if framework is missing
- *
- * 4. Access Manager instance
- *    - Use $this->manager to get config, pages, etc.
- *    - Use $this->manager->get_config() for configuration
- *    - Use $this->manager->get_pages() for registered pages
- *
- * 5. Register in config
- *    - Add your integration class to the 'integrations' config array
- *    - Set 'enabled' => true and 'class' => 'YourClassName'
- *
- * 6. The Manager will:
- *    - Validate your class implements IntegrationInterface
- *    - Check is_available() before instantiating
- *    - Call register_hooks() automatically
- *    - Log errors if integration fails to load
- */
+		/**
+		 * 1. Implement IntegrationInterface
+		 *    - Required methods: __construct(), is_available(), register_hooks(), get_name()
+		 *
+		 * 2. Check availability in is_available()
+		 *    - Return false if the framework is not installed/active
+		 *
+		 * 3. Register hooks in register_hooks()
+		 *    - Hook into the framework's registration system
+		 *    - Show admin notice if framework is missing
+		 *
+		 * 4. Access Manager instance
+		 *    - Use $this->manager to get config, pages, etc.
+		 *    - Use $this->manager->get_config() for configuration
+		 *    - Use $this->manager->get_pages() for registered pages
+		 *
+		 * 5. Register in config
+		 *    - Add your integration class to the 'integrations' config array
+		 *    - Set 'enabled' => true and 'class' => 'YourClassName'
+		 *
+		 * 6. The Manager will:
+		 *    - Validate your class implements IntegrationInterface
+		 *    - Check is_available() before instantiating
+		 *    - Call register_hooks() automatically
+		 *    - Log errors if integration fails to load
+		 */

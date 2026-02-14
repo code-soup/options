@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || die;
 	<div id="delete-action">
 		<?php
 		if ( current_user_can( 'delete_post', $post->ID ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 			$delete_url = get_delete_post_link(
 				$post->ID,
 				'',
@@ -29,12 +30,14 @@ defined( 'ABSPATH' ) || die;
 	</div>
 	<div id="publishing-action">
 		<span class="spinner"></span>
-		<?php submit_button(
+		<?php
+		submit_button(
 			__( 'Update', 'codesoup-options' ),
 			'primary large',
 			'publish',
-			false 
-		); ?>
+			false
+		);
+		?>
 	</div>
 	<div class="clear"></div>
 </div>

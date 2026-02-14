@@ -91,4 +91,3 @@ $main_manager->register_page(
 );
 
 $main_manager->init();
-

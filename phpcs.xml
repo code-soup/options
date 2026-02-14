@@ -32,8 +32,8 @@
 	<!-- Strip the filepaths down to the relevant bit. -->
 	<arg name="basepath" value="./"/>
 
-  <!-- Check up to 8 files simultaneously. -->
-	<arg name="parallel" value="75"/>
+  	<!-- Check up to 8 files simultaneously. -->
+	<arg name="parallel" value="8"/>
 
     <arg name="colors"/>
 
@@ -44,10 +44,14 @@
 	<file>.</file>
 
 	<!-- Exclude patterns. -->
-	<exclude-pattern>/vendor/*</exclude-pattern>
-	<exclude-pattern>/node_modules/*</exclude-pattern>
-    <exclude-pattern>/languages/*</exclude-pattern>
-    <exclude-pattern>/src/*</exclude-pattern>
+	<exclude-pattern>vendor/*</exclude-pattern>
+	<exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>languages/*</exclude-pattern>
+    <exclude-pattern>src/*</exclude-pattern>
+    <exclude-pattern>dist/*</exclude-pattern>
+    <exclude-pattern>docs/*</exclude-pattern>
+    <exclude-pattern>_report/*</exclude-pattern>
+
 
 	<!--
 	#############################################################################
@@ -56,9 +60,6 @@
 	-->
 
 	<rule ref="WordPress">
-		<exclude name="WordPress.NamingConventions.PrefixAllGlobals"/>
-		<exclude name="WordPress.Files.FileName"/>
-		<exclude name="Universal.Files.SeparateFunctionsFromOO.Mixed"/>
 	</rule>
 
 	<!--

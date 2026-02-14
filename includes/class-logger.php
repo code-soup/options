@@ -118,4 +118,3 @@ class Logger {
 		error_log( $formatted_message );
 	}
 }
-

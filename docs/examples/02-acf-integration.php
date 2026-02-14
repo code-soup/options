@@ -70,7 +70,7 @@ $manager->init();
 // ============================================================================
 
 // Get all options for a page (returns unserialized array from post_content).
-$manager       = Manager::get( 'acf_settings' );
+$manager         = Manager::get( 'acf_settings' );
 $general_options = $manager->get_options( 'general' );
 
 // Access values from the array.
@@ -154,4 +154,3 @@ $manager = Manager::create(
 		),
 	)
 );
-

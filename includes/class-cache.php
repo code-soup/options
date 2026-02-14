@@ -77,9 +77,10 @@ class Cache {
 		if ( strlen( $key ) > 172 ) {
 			throw new \LengthException(
 				sprintf(
-					__( 'Cache key too long (%1$d chars): %2$s', 'codesoup-options' ),
-					strlen( $key ),
-					$key
+					/* translators: 1: key length in characters, 2: the cache key */
+					esc_html__( 'Cache key too long (%1$d chars): %2$s', 'codesoup-options' ),
+					esc_html( strlen( $key ) ),
+					esc_html( $key )
 				)
 			);
 		}
@@ -95,12 +96,12 @@ class Cache {
 	 */
 	public function get( string $cache_key ) {
 		$cached = wp_cache_get( $cache_key, $this->cache_group );
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			return $cached;
 		}
 
 		$cached = get_transient( $cache_key );
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			wp_cache_set( $cache_key, $cached, $this->cache_group );
 			return $cached;
 		}
@@ -120,14 +121,17 @@ class Cache {
 		// Validate data is serializable (resources cannot be serialized).
 		if ( is_resource( $data ) ) {
 			throw new \InvalidArgumentException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				__( 'Cannot cache resource type data.', 'codesoup-options' )
 			);
 		}
 
 		// Test serialization to catch objects that don't support it.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 		$test = @serialize( $data );
 		if ( false === $test && 'b:0;' !== $test ) {
 			throw new \InvalidArgumentException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				__( 'Data cannot be serialized for caching.', 'codesoup-options' )
 			);
 		}
@@ -204,4 +208,3 @@ class Cache {
 		return $this->cache_group;
 	}
 }
-

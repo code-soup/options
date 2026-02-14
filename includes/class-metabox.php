@@ -70,18 +70,21 @@ class Metabox {
 	public function __construct( array $args ) {
 		if ( empty( $args['page'] ) ) {
 			throw new \InvalidArgumentException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				__( 'Metabox page is required', 'codesoup-options' )
 			);
 		}
 
 		if ( empty( $args['title'] ) ) {
 			throw new \InvalidArgumentException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				__( 'Metabox title is required', 'codesoup-options' )
 			);
 		}
 
 		if ( empty( $args['path'] ) ) {
 			throw new \InvalidArgumentException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				__( 'Metabox path is required', 'codesoup-options' )
 			);
 		}
@@ -91,8 +94,9 @@ class Metabox {
 		if ( ! file_exists( $path ) ) {
 			throw new \InvalidArgumentException(
 				sprintf(
-					__( 'Metabox template file does not exist: %s', 'codesoup-options' ),
-					$path
+					/* translators: %s: file path */
+					esc_html__( 'Metabox template file does not exist: %s', 'codesoup-options' ),
+					esc_html( $path )
 				)
 			);
 		}
@@ -100,8 +104,9 @@ class Metabox {
 		if ( ! is_readable( $path ) ) {
 			throw new \InvalidArgumentException(
 				sprintf(
-					__( 'Metabox template file is not readable: %s', 'codesoup-options' ),
-					$path
+					/* translators: %s: file path */
+					esc_html__( 'Metabox template file is not readable: %s', 'codesoup-options' ),
+					esc_html( $path )
 				)
 			);
 		}
@@ -127,7 +132,7 @@ class Metabox {
 		add_meta_box(
 			$id,
 			$this->title,
-			function( $post ) use ( $path ) {
+			function () use ( $path ) {
 				require $path;
 			},
 			$post_type,
@@ -136,4 +141,3 @@ class Metabox {
 		);
 	}
 }
-

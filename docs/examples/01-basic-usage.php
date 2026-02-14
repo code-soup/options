@@ -134,4 +134,3 @@ $options = $manager->get_options( 'general' );
 // Access individual values.
 $site_title = $options['site_title'] ?? '';
 $site_email = $options['site_email'] ?? '';
-

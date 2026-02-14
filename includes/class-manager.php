@@ -218,6 +218,7 @@ class Manager {
 	 *                           sanitize_text_field(), sanitize_email(), etc.
 	 * }
 	 * @return bool|\WP_Error True on success, WP_Error on failure.
+	 * @throws \InvalidArgumentException If validation fails.
 	 */
 	public function save_options( array $args ) {
 		try {
@@ -248,6 +249,7 @@ class Manager {
 			if ( ! $post ) {
 				throw new \InvalidArgumentException(
 					sprintf(
+						/* translators: %d: post ID */
 						__( 'Post with ID %d does not exist.', 'codesoup-options' ),
 						$post_id
 					)
@@ -257,6 +259,7 @@ class Manager {
 			if ( $post->post_type !== $this->config['post_type'] ) {
 				throw new \InvalidArgumentException(
 					sprintf(
+						/* translators: %d: post ID */
 						__( 'Post ID %d is not a valid options post.', 'codesoup-options' ),
 						$post_id
 					)
@@ -266,6 +269,7 @@ class Manager {
 			if ( ! wp_verify_nonce( $nonce, 'update-post_' . $post_id ) ) {
 				throw new \InvalidArgumentException(
 					sprintf(
+						/* translators: %d: post ID */
 						__( 'Nonce verification failed for post %d.', 'codesoup-options' ),
 						$post_id
 					)
@@ -275,6 +279,7 @@ class Manager {
 			if ( ! $this->can_edit_page( $post_id ) ) {
 				throw new \InvalidArgumentException(
 					sprintf(
+						/* translators: %d: post ID */
 						__( 'Current user does not have permission to edit post %d.', 'codesoup-options' ),
 						$post_id
 					)
@@ -294,6 +299,7 @@ class Manager {
 			if ( is_wp_error( $result ) ) {
 				throw new \InvalidArgumentException(
 					sprintf(
+						/* translators: %s: error message */
 						__( 'Failed to save options: %s', 'codesoup-options' ),
 						$result->get_error_message()
 					)
@@ -441,9 +447,9 @@ class Manager {
 
 		$this->validate_config();
 
-		$cache_group    = 'cs_opt_' . $this->config['prefix'];
-		$this->cache    = new Cache( $this->instance_key, $cache_group, $this->config['cache_duration'] );
-		$this->logger   = new Logger( $this->instance_key, $this->config['debug'] );
+		$cache_group  = 'cs_opt_' . $this->config['prefix'];
+		$this->cache  = new Cache( $this->instance_key, $cache_group, $this->config['cache_duration'] );
+		$this->logger = new Logger( $this->instance_key, $this->config['debug'] );
 
 		$this->load_integrations();
 	}
@@ -461,8 +467,9 @@ class Manager {
 			if ( empty( $this->config[ $key ] ) ) {
 				throw new \InvalidArgumentException(
 					sprintf(
-						__( 'Config "%s" is required.', 'codesoup-options' ),
-						$key
+						/* translators: %s: configuration key name */
+						esc_html__( 'Config "%s" is required.', 'codesoup-options' ),
+						esc_html( $key )
 					)
 				);
 			}
@@ -474,7 +481,7 @@ class Manager {
 				throw new \InvalidArgumentException(
 					sprintf(
 						/* translators: %s: type of the value provided */
-						__( 'Config "menu_position" must be numeric, "%s" given.', 'codesoup-options' ),
+						esc_html__( 'Config "menu_position" must be numeric, "%s" given.', 'codesoup-options' ),
 						esc_html( gettype( $this->config['menu_position'] ) )
 					)
 				);
@@ -484,8 +491,9 @@ class Manager {
 			if ( $position < 1 || $position > 100 ) {
 				throw new \InvalidArgumentException(
 					sprintf(
-						__( 'Config "menu_position" must be between 1 and 100, %d given.', 'codesoup-options' ),
-						$position
+						/* translators: %d: position value */
+						esc_html__( 'Config "menu_position" must be between 1 and 100, %d given.', 'codesoup-options' ),
+						esc_html( (string) $position )
 					)
 				);
 			}
@@ -497,10 +505,12 @@ class Manager {
 				throw new \InvalidArgumentException(
 					sprintf(
 						/* translators: %s: type and value of the provided cache_duration */
-						__( 'Config "cache_duration" must be a positive integer, %s given.', 'codesoup-options' ),
-						is_int( $this->config['cache_duration'] )
-							? (string) $this->config['cache_duration']
-							: gettype( $this->config['cache_duration'] )
+						esc_html__( 'Config "cache_duration" must be a positive integer, %s given.', 'codesoup-options' ),
+						esc_html(
+							is_int( $this->config['cache_duration'] )
+								? (string) $this->config['cache_duration']
+								: gettype( $this->config['cache_duration'] )
+						)
 					)
 				);
 			}
@@ -509,6 +519,7 @@ class Manager {
 			if ( $this->config['cache_duration'] > WEEK_IN_SECONDS ) {
 				$this->logger->warning(
 					sprintf(
+						/* translators: %d: cache duration in seconds */
 						__( 'Cache duration is very long (%d seconds). Consider using a shorter duration.', 'codesoup-options' ),
 						$this->config['cache_duration']
 					)
@@ -524,7 +535,7 @@ class Manager {
 				strpos( $icon, 'data:image' ) !== 0 &&
 				! filter_var( $icon, FILTER_VALIDATE_URL ) ) {
 				throw new \InvalidArgumentException(
-					__( 'Config "menu_icon" must be a dashicon class, data URI, or valid URL.', 'codesoup-options' )
+					esc_html__( 'Config "menu_icon" must be a dashicon class, data URI, or valid URL.', 'codesoup-options' )
 				);
 			}
 		}
@@ -532,21 +543,21 @@ class Manager {
 		// Validate integrations config structure.
 		if ( isset( $this->config['integrations'] ) && ! is_array( $this->config['integrations'] ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Config "integrations" must be an array.', 'codesoup-options' )
+				esc_html__( 'Config "integrations" must be an array.', 'codesoup-options' )
 			);
 		}
 
 		// Validate revisions is boolean.
 		if ( isset( $this->config['revisions'] ) && ! is_bool( $this->config['revisions'] ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Config "revisions" must be a boolean.', 'codesoup-options' )
+				esc_html__( 'Config "revisions" must be a boolean.', 'codesoup-options' )
 			);
 		}
 
 		// Validate debug is boolean.
 		if ( isset( $this->config['debug'] ) && ! is_bool( $this->config['debug'] ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Config "debug" must be a boolean.', 'codesoup-options' )
+				esc_html__( 'Config "debug" must be a boolean.', 'codesoup-options' )
 			);
 		}
 
@@ -568,7 +579,8 @@ class Manager {
 			if ( strpos( $prefix, $reserved ) === 0 ) {
 				$this->logger->warning(
 					sprintf(
-						__( 'Prefix "%s" starts with reserved prefix "%s". This may cause conflicts.', 'codesoup-options' ),
+						/* translators: 1: prefix, 2: reserved prefix */
+						__( 'Prefix "%1$s" starts with reserved prefix "%2$s". This may cause conflicts.', 'codesoup-options' ),
 						$prefix,
 						$reserved
 					)
@@ -580,7 +592,8 @@ class Manager {
 		if ( strlen( $prefix ) < 3 ) {
 			$this->logger->warning(
 				sprintf(
-					__( 'Prefix "%s" is very short (%d characters). Consider using a longer, more unique prefix.', 'codesoup-options' ),
+					/* translators: 1: prefix, 2: character count */
+					__( 'Prefix "%1$s" is very short (%2$d characters). Consider using a longer, more unique prefix.', 'codesoup-options' ),
 					$prefix,
 					strlen( $prefix )
 				)
@@ -595,6 +608,7 @@ class Manager {
 			if ( $existing_type !== $post_type && strpos( $existing_type, $prefix ) === 0 ) {
 				$this->logger->warning(
 					sprintf(
+						/* translators: %s: post type name */
 						__( 'Post type "%s" already exists with similar prefix. This may cause confusion.', 'codesoup-options' ),
 						$existing_type
 					)
@@ -625,6 +639,7 @@ class Manager {
 			if ( ! $class || ! is_string( $class ) ) {
 				$this->logger->warning(
 					sprintf(
+						/* translators: %s: integration key */
 						__( 'Integration class name must be a string for key: %s', 'codesoup-options' ),
 						$key
 					)
@@ -636,6 +651,7 @@ class Manager {
 			if ( ! preg_match( '/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff\\\\]*$/', $class ) ) {
 				$this->logger->warning(
 					sprintf(
+						/* translators: %s: class name */
 						__( 'Invalid integration class name format: %s', 'codesoup-options' ),
 						$class
 					)
@@ -646,6 +662,7 @@ class Manager {
 			if ( ! class_exists( $class ) ) {
 				$this->logger->warning(
 					sprintf(
+						/* translators: %s: class name */
 						__( 'Integration class not found: %s', 'codesoup-options' ),
 						$class
 					)
@@ -702,7 +719,7 @@ class Manager {
 	public function register_pages( array $pages ): void {
 		if ( empty( $pages ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Pages array cannot be empty.', 'codesoup-options' )
+				esc_html__( 'Pages array cannot be empty.', 'codesoup-options' )
 			);
 		}
 
@@ -710,9 +727,10 @@ class Manager {
 			if ( ! is_array( $page_args ) ) {
 				throw new \InvalidArgumentException(
 					sprintf(
-						__( 'Page at index %d must be an array, %s given.', 'codesoup-options' ),
-						$index,
-						gettype( $page_args )
+						/* translators: 1: array index, 2: type of value */
+						esc_html__( 'Page at index %1$d must be an array, %2$s given.', 'codesoup-options' ),
+						esc_html( (string) $index ),
+						esc_html( gettype( $page_args ) )
 					)
 				);
 			}
@@ -756,7 +774,7 @@ class Manager {
 
 		usort(
 			$this->metaboxes,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $a->order <=> $b->order;
 			}
 		);
@@ -875,16 +893,16 @@ class Manager {
 		$post_names = array();
 		$pages_map  = array();
 		foreach ( $this->pages as $page ) {
-			$post_name                = $this->get_post_name( $page->id );
-			$post_names[]             = $post_name;
-			$pages_map[ $post_name ]  = $page;
+			$post_name               = $this->get_post_name( $page->id );
+			$post_names[]            = $post_name;
+			$pages_map[ $post_name ] = $page;
 		}
 
 		// Batch query for existing posts using wpdb.
 		global $wpdb;
 		$placeholders = implode( ',', array_fill( 0, count( $post_names ), '%s' ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$existing_posts = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT ID, post_name
@@ -895,6 +913,7 @@ class Manager {
 				array_merge( array( $this->config['post_type'] ), $post_names )
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Index by post_name for quick lookup.
 		$existing_by_name = array();
@@ -991,6 +1010,7 @@ class Manager {
 			// Log other errors.
 			$this->logger->error(
 				sprintf(
+					/* translators: 1: page ID, 2: instance key, 3: error message */
 					__( 'Failed to create page "%1$s" for instance "%2$s": %3$s', 'codesoup-options' ),
 					$page->id,
 					$this->instance_key,
@@ -1102,7 +1122,7 @@ class Manager {
 		$cache_key = 'accessible_posts_' . $user_id;
 		$cached    = wp_cache_get( $cache_key, $this->cache->get_group() );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			return $cached;
 		}
 
@@ -1117,6 +1137,7 @@ class Manager {
 
 		$placeholders = implode( ',', array_fill( 0, count( $user_caps ), '%s' ) );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$post_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT post_id
@@ -1126,6 +1147,7 @@ class Manager {
 				array_merge( array( self::META_KEY_CAPABILITY ), $user_caps )
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$post_ids = array_map( 'intval', $post_ids );
 
@@ -1332,7 +1354,7 @@ class Manager {
 
 		// Try to get from cache.
 		$cached = $this->cache->get( $cache_key );
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			return $cached;
 		}
 
@@ -1368,22 +1390,22 @@ class Manager {
 	 *
 	 * @param string $page_id Page identifier.
 	 * @param string $field_name field name.
-	 * @param mixed  $default Default value if field not found.
+	 * @param mixed  $default_value Default value if field not found.
 	 * @param string $integration Integration key to use (default: 'acf').
 	 * @return mixed Field value or default.
 	 */
-	public function get_option( string $page_id, string $field_name, $default = null, string $integration = 'acf' ) {
+	public function get_option( string $page_id, string $field_name, $default_value = null, string $integration = 'acf' ) {
 		if ( ! $this->has_integration( $integration ) ) {
-			return $default;
+			return $default_value;
 		}
 
 		$integration_instance = $this->get_integration( $integration );
 
 		if ( ! $integration_instance || ! method_exists( $integration_instance, 'get_option' ) ) {
-			return $default;
+			return $default_value;
 		}
 
-		return $integration_instance->get_option( $page_id, $field_name, $default );
+		return $integration_instance->get_option( $page_id, $field_name, $default_value );
 	}
 
 	/**
@@ -1447,9 +1469,9 @@ class Manager {
 	public function get_post_by_page_id( string $page_id ): ?\WP_Post {
 		// Check instance cache first.
 		$cached_post_id = $this->cache->get_page_id( $page_id );
-		if ( $cached_post_id !== false ) {
+		if ( false !== $cached_post_id ) {
 			$post = get_post( $cached_post_id );
-			if ( $post && $post->post_type === $this->config['post_type'] ) {
+			if ( $post && $this->config['post_type'] === $post->post_type ) {
 				return $post;
 			}
 			// Cache is stale, clear it.
@@ -1460,12 +1482,12 @@ class Manager {
 		$cache_key = $this->cache->get_key( 'post_id_' . $page_id );
 		$post_id   = $this->cache->get( $cache_key );
 
-		if ( $post_id !== false ) {
-			if ( $post_id === 0 ) {
+		if ( false !== $post_id ) {
+			if ( 0 === $post_id ) {
 				return null; // Cached "not found" result.
 			}
 			$post = get_post( $post_id );
-			if ( $post && $post->post_type === $this->config['post_type'] ) {
+			if ( $post && $this->config['post_type'] === $post->post_type ) {
 				// Update instance cache.
 				$this->cache->set_page_id( $page_id, $post_id );
 				return $post;

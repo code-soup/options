@@ -49,4 +49,3 @@ interface IntegrationInterface {
 	 */
 	public static function get_name(): string;
 }
-

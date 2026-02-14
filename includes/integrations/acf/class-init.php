@@ -165,6 +165,7 @@ class Init implements IntegrationInterface {
 			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'update-post_' . $post_id ) ) {
 				$this->manager->get_logger()->warning(
 					sprintf(
+						/* translators: %d: post ID */
 						__( 'Nonce verification failed for post %d', 'codesoup-options' ),
 						$post_id
 					)
@@ -236,25 +237,24 @@ class Init implements IntegrationInterface {
 	 *
 	 * @param string $page_id Page identifier.
 	 * @param string $field_name ACF field name.
-	 * @param mixed  $default Default value if field not found.
+	 * @param mixed  $default_value Default value if field not found.
 	 * @return mixed Field value or default.
 	 */
-	public function get_option( string $page_id, string $field_name, $default = null ) {
+	public function get_option( string $page_id, string $field_name, $default_value = null ) {
 		if ( ! function_exists( 'get_field' ) ) {
-			return $default;
+			return $default_value;
 		}
 
 		$post = $this->manager->get_post_by_page_id( $page_id );
 
 		if ( ! $post ) {
-			return $default;
+			return $default_value;
 		}
 
 		$value = get_field( $field_name, $post->ID );
 
 		return ( false === $value )
-			? $default
+			? $default_value
 			: $value;
 	}
 }
-

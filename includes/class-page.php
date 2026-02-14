@@ -56,19 +56,19 @@ class Page {
 	public function __construct( array $args ) {
 		if ( empty( $args['id'] ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Page ID is required', 'codesoup-options' )
+				esc_html__( 'Page ID is required', 'codesoup-options' )
 			);
 		}
 
 		if ( empty( $args['title'] ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Page title is required', 'codesoup-options' )
+				esc_html__( 'Page title is required', 'codesoup-options' )
 			);
 		}
 
 		if ( empty( $args['capability'] ) ) {
 			throw new \InvalidArgumentException(
-				__( 'Page capability is required', 'codesoup-options' )
+				esc_html__( 'Page capability is required', 'codesoup-options' )
 			);
 		}
 

@@ -63,12 +63,12 @@ class Migration {
 		$new_prefix    = $new_config['prefix'];
 
 		$results = array(
-			'success'              => true,
-			'posts_updated'        => 0,
-			'post_type_changed'    => 0,
-			'prefix_changed'       => 0,
-			'capabilities_synced'  => 0,
-			'errors'               => array(),
+			'success'             => true,
+			'posts_updated'       => 0,
+			'post_type_changed'   => 0,
+			'prefix_changed'      => 0,
+			'capabilities_synced' => 0,
+			'errors'              => array(),
 		);
 
 		// Get all posts with old post_type.
@@ -111,18 +111,19 @@ class Migration {
 				$result = set_post_type( $post_id, $new_post_type );
 				if ( false === $result ) {
 					$results['errors'][] = sprintf(
+						/* translators: %d: post ID */
 						__( 'Failed to update post type for post ID %d', 'codesoup-options' ),
 						$post_id
 					);
 				} else {
-					$results['post_type_changed']++;
+					++$results['post_type_changed'];
 					$updated = true;
 				}
 			}
 
 			// Update post_name (prefix) if changed.
 			if ( $old_prefix && $old_prefix !== $new_prefix ) {
-				$old_name = $post->post_name;
+				$old_name              = $post->post_name;
 				$old_prefix_normalized = Manager::normalize_slug( $old_prefix );
 				if ( strpos( $old_name, $old_prefix_normalized ) === 0 ) {
 					$page_id_normalized = substr( $old_name, strlen( $old_prefix_normalized ) );
@@ -139,12 +140,13 @@ class Migration {
 
 					if ( is_wp_error( $result ) ) {
 						$results['errors'][] = sprintf(
+							/* translators: 1: post ID, 2: error message */
 							__( 'Failed to update post name for post ID %1$d: %2$s', 'codesoup-options' ),
 							$post_id,
 							$result->get_error_message()
 						);
 					} else {
-						$results['prefix_changed']++;
+						++$results['prefix_changed'];
 						$updated = true;
 
 						// Clear cache with old and new keys.
@@ -168,7 +170,7 @@ class Migration {
 
 			// Sync capability if provided in new_pages.
 			if ( ! empty( $capability_map ) ) {
-				$post_name = get_post_field( 'post_name', $post_id );
+				$post_name         = get_post_field( 'post_name', $post_id );
 				$prefix_normalized = Manager::normalize_slug( $new_prefix );
 
 				if ( strpos( $post_name, $prefix_normalized ) === 0 ) {
@@ -181,7 +183,7 @@ class Migration {
 
 						if ( $old_capability !== $new_capability ) {
 							update_post_meta( $post_id, Manager::META_KEY_CAPABILITY, $new_capability );
-							$results['capabilities_synced']++;
+							++$results['capabilities_synced'];
 							$updated = true;
 						}
 					}
@@ -189,11 +191,10 @@ class Migration {
 			}
 
 			if ( $updated ) {
-				$results['posts_updated']++;
+				++$results['posts_updated'];
 			}
 		}
 
 		return $results;
 	}
 }
-
