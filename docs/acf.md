@@ -11,9 +11,9 @@ $manager = Manager::create( 'theme_settings' );
 
 $manager->register_pages(
 	array(
-		array( 'id' => 'general', 'title' => 'General', 'capability' => 'manage_options' ),
-		array( 'id' => 'header', 'title' => 'Header', 'capability' => 'manage_options' ),
-		array( 'id' => 'footer', 'title' => 'Footer', 'capability' => 'manage_options' ),
+		array( 'id' => 'general', 'title' => 'General', 'capability' => 'manage_options', 'description' => 'General site settings' ),
+		array( 'id' => 'header', 'title' => 'Header', 'capability' => 'manage_options', 'description' => 'Header configuration' ),
+		array( 'id' => 'footer', 'title' => 'Footer', 'capability' => 'manage_options', 'description' => 'Footer settings' ),
 	)
 );
 

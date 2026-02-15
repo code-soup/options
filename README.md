@@ -14,7 +14,7 @@ Manage WordPress options using custom post types instead of the wp_options table
 
 ## Requirements
 
-- PHP >= 8.1
+- PHP >= 7.2
 - WordPress >= 6.0
 - Optional: ACF, CMB2, MetaBox.io, or Carbon Fields
 
@@ -82,9 +82,10 @@ $manager = Manager::create( 'theme_settings' );
 
 $manager->register_page(
 	array(
-		'id'         => 'general',
-		'title'      => 'General',
-		'capability' => 'manage_options',
+		'id'          => 'general',
+		'title'       => 'General',
+		'capability'  => 'manage_options',
+		'description' => 'General site settings and configuration',
 	)
 );
 
@@ -98,23 +99,12 @@ $logo = Manager::get( 'theme_settings' )->get_option( 'general', 'site_logo' );
 
 ## Documentation
 
+- **[Examples](docs/examples/)** - Working code examples
 - **[Native Metaboxes](docs/native.md)** - Using without any framework
 - **[ACF Integration](docs/acf.md)** - Using with Advanced Custom Fields
 - **[Custom Integrations](docs/custom-integrations.md)** - CMB2, MetaBox.io, Carbon Fields
 - **[API Reference](docs/api.md)** - Complete method documentation
 - **[Migration Guide](docs/migration.md)** - Migrating post_type, prefix, and capabilities
-- **[Architecture](docs/architecture.md)** - Class diagram and design patterns
-- **[Examples](docs/examples/)** - Working code examples
-
-## Key Features
-
-**Multiple Instances** - Run different option sets with separate configurations
-
-**Capability Control** - Fine-grained permissions per page
-
-**Extensible** - Easy integration system for any field framework
-
-**Clean Code** - PSR-4 autoloading, PHP 8.1+, typed properties
 
 ## Configuration
 

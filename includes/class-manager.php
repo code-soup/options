@@ -52,11 +52,6 @@ class Manager {
 	public const META_KEY_CAPABILITY = '_codesoup_options_capability';
 
 	/**
-	 * Meta key for storing page description
-	 */
-	public const META_KEY_DESCRIPTION = '_codesoup_options_description';
-
-	/**
 	 * Default configuration values
 	 */
 	private const CONFIG_DEFAULTS = array(
@@ -805,7 +800,8 @@ class Manager {
 		add_action( 'wp_trash_post', array( $this, 'invalidate_cache_on_delete' ) );
 		add_filter( 'pre_get_posts', array( $this, 'filter_posts_by_capability' ) );
 		add_filter( "views_edit-{$this->config['post_type']}", '__return_empty_array' );
-		add_filter( "manage_{$this->config['post_type']}_posts_columns", array( $this, 'remove_date_column' ) );
+		add_filter( "manage_{$this->config['post_type']}_posts_columns", array( $this, 'customize_columns' ) );
+		add_action( "manage_{$this->config['post_type']}_posts_custom_column", array( $this, 'render_custom_column' ), 10, 2 );
 		add_filter( 'post_row_actions', array( $this, 'remove_row_actions' ), 10, 2 );
 		add_filter( 'parent_file', array( $this, 'set_parent_file' ) );
 		add_filter( 'submenu_file', array( $this, 'set_submenu_file' ) );
@@ -934,6 +930,19 @@ class Manager {
 					update_post_meta( $post_id, self::META_KEY_CAPABILITY, $page->capability );
 				}
 
+				// Update description if needed.
+				$current_post     = get_post( $post_id );
+				$current_excerpt  = $current_post ? $current_post->post_excerpt : '';
+				$desired_excerpt  = $page->description ?? '';
+				if ( $current_excerpt !== $desired_excerpt ) {
+					wp_update_post(
+						array(
+							'ID'           => $post_id,
+							'post_excerpt' => $desired_excerpt,
+						)
+					);
+				}
+
 				$this->cache->set_page_id( $page->id, $post_id );
 			} else {
 				// Create new page.
@@ -985,6 +994,7 @@ class Manager {
 				'post_type'    => $post_type,
 				'post_status'  => 'publish',
 				'post_content' => '',
+				'post_excerpt' => $page->description ?? '',
 			),
 			true
 		);
@@ -1024,10 +1034,6 @@ class Manager {
 		// Success - set metadata and cache.
 		update_post_meta( $post_id, self::META_KEY_CAPABILITY, $page->capability );
 
-		if ( ! empty( $page->description ) ) {
-			update_post_meta( $post_id, self::META_KEY_DESCRIPTION, $page->description );
-		}
-
 		$this->cache->set_page_id( $page->id, $post_id );
 		$this->created_pages[ $page->id ] = $post_id;
 	}
@@ -1051,14 +1057,44 @@ class Manager {
 	}
 
 	/**
-	 * Remove date column from post list table
+	 * Customize columns for post list table
 	 *
 	 * @param array $columns The columns array.
 	 * @return array
 	 */
-	public function remove_date_column( array $columns ): array {
+	public function customize_columns( array $columns ): array {
 		unset( $columns['date'] );
+
+		$columns['description'] = __( 'Description', 'codesoup-options' );
+
 		return $columns;
+	}
+
+	/**
+	 * Render custom column content
+	 *
+	 * @param string $column_name The column name.
+	 * @param int    $post_id The post ID.
+	 * @return void
+	 */
+	public function render_custom_column( string $column_name, int $post_id ): void {
+		if ( 'description' !== $column_name ) {
+			return;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return;
+		}
+
+		$description = $post->post_excerpt;
+
+		if ( ! empty( $description ) ) {
+			printf(
+				'<p>%s</p>',
+				esc_html( $description )
+			);
+		}
 	}
 
 	/**

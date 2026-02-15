@@ -290,9 +290,14 @@ array(
 	'id'          => 'general',           // Required: Unique page ID
 	'title'       => 'General Settings',  // Required: Page title
 	'capability'  => 'manage_options',    // Required: User capability
-	'description' => 'Site settings',     // Optional: Page description
+	'description' => 'Site settings',     // Optional: Page description (stored in post_excerpt)
 )
 ```
+
+**Description Field:**
+- The `description` field is optional and stored in the WordPress `post_excerpt` field
+- Useful for adding context or notes about the page's purpose
+- Can be retrieved using standard WordPress functions like `get_post_field( 'post_excerpt', $post_id )`
 
 ---
 

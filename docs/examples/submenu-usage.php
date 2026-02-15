@@ -19,9 +19,10 @@ $settings_manager = \CodeSoup\Options\Manager::create(
 
 $settings_manager->register_page(
 	array(
-		'id'         => 'general',
-		'title'      => 'General Settings',
-		'capability' => 'manage_options',
+		'id'          => 'general',
+		'title'       => 'General Settings',
+		'capability'  => 'manage_options',
+		'description' => 'General site settings',
 	)
 );
 
@@ -38,9 +39,10 @@ $tools_manager = \CodeSoup\Options\Manager::create(
 
 $tools_manager->register_page(
 	array(
-		'id'         => 'maintenance',
-		'title'      => 'Maintenance Mode',
-		'capability' => 'manage_options',
+		'id'          => 'maintenance',
+		'title'       => 'Maintenance Mode',
+		'capability'  => 'manage_options',
+		'description' => 'Maintenance mode configuration',
 	)
 );
 
@@ -58,14 +60,16 @@ $theme_manager = \CodeSoup\Options\Manager::create(
 $theme_manager->register_pages(
 	array(
 		array(
-			'id'         => 'header',
-			'title'      => 'Header Settings',
-			'capability' => 'edit_theme_options',
+			'id'          => 'header',
+			'title'       => 'Header Settings',
+			'capability'  => 'edit_theme_options',
+			'description' => 'Header configuration and styling',
 		),
 		array(
-			'id'         => 'footer',
-			'title'      => 'Footer Settings',
-			'capability' => 'edit_theme_options',
+			'id'          => 'footer',
+			'title'       => 'Footer Settings',
+			'capability'  => 'edit_theme_options',
+			'description' => 'Footer configuration and styling',
 		),
 	)
 );
@@ -84,9 +88,10 @@ $main_manager = \CodeSoup\Options\Manager::create(
 
 $main_manager->register_page(
 	array(
-		'id'         => 'general',
-		'title'      => 'General',
-		'capability' => 'manage_options',
+		'id'          => 'general',
+		'title'       => 'General',
+		'capability'  => 'manage_options',
+		'description' => 'General options',
 	)
 );
 

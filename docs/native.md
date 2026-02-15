@@ -21,9 +21,10 @@ $manager = Manager::create(
 
 $manager->register_page(
 	array(
-		'id'         => 'general',
-		'title'      => 'General Settings',
-		'capability' => 'manage_options',
+		'id'          => 'general',
+		'title'       => 'General Settings',
+		'capability'  => 'manage_options',
+		'description' => 'General site configuration options',
 	)
 );
 

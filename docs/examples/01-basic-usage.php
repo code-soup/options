@@ -29,14 +29,16 @@ $manager = Manager::create(
 $manager->register_pages(
 	array(
 		array(
-			'id'         => 'general',
-			'title'      => 'General Settings',
-			'capability' => 'manage_options',
+			'id'          => 'general',
+			'title'       => 'General Settings',
+			'capability'  => 'manage_options',
+			'description' => 'General site configuration and information',
 		),
 		array(
-			'id'         => 'footer',
-			'title'      => 'Footer Settings',
-			'capability' => 'manage_options',
+			'id'          => 'footer',
+			'title'       => 'Footer Settings',
+			'capability'  => 'manage_options',
+			'description' => 'Footer content and scripts',
 		),
 	)
 );

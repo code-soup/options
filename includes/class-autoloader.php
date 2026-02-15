@@ -106,7 +106,7 @@ class Autoloader {
 		if ( ! str_ends_with( $filename, 'interface' ) ) {
 			$parts         = explode( '/', $filename );
 			$key           = count( $parts ) - 1;
-			$parts[ $key ] = 'class-' . $parts[ $key ];
+			$parts[ $key ] = sprintf('class-%s', $parts[ $key ]);
 			$filename      = implode( '/', $parts );
 		}
 
@@ -121,9 +121,3 @@ class Autoloader {
 		);
 	}
 }
-
-// Initialize and register the autoloader.
-( function () {
-	$autoloader = new Autoloader( dirname( __DIR__ ) );
-	$autoloader->register();
-} )();

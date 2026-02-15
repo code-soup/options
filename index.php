@@ -14,10 +14,10 @@ defined( 'ABSPATH' ) || die;
 /**
  * Plugin Name:       CodeSoup Options
  * Plugin URI:        https://www.codesoup.co
- * Description:       Framework-agnostic WordPress options manager using custom post types. Supports ACF, custom metaboxes, and extensible integrations.
+ * Description:       Framework-agnostic WordPress options manager using custom post types to store data. Supports multiple instances, ACF, custom metaboxes, and extensible integrations.
  * Version:           1.0.0
  * Requires at least: 6.0
- * Requires PHP:      8.1
+ * Requires PHP:      7.2
  * Author:            Code Soup
  * Author URI:        https://www.codesoup.co
  * License:           GPL-3.0+
@@ -26,7 +26,21 @@ defined( 'ABSPATH' ) || die;
  * Domain Path:       /languages
  */
 
+
+/**
+ * Prevent in case multiple instances of package exist.
+ */
+if ( class_exists( 'CodeSoup\Options\Autoloader' ) )
+{
+	return;
+}
+
 // Load Composer autoloader if available.
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require_once __DIR__ . '/vendor/autoload.php';
 }
+
+( function () {		
+	$autoloader = new CodeSoup\Options\Autoloader( dirname( __FILE__ ) );
+	$autoloader->register();
+} )();

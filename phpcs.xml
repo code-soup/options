@@ -5,7 +5,9 @@
 	<!-- See https://github.com/PHPCompatibility/PHPCompatibilityWP -->
 
 	<!-- Set a description for this ruleset. -->
-	<description>A custom set of code standard rules to check for WordPress.</description>
+	<description>
+		A custom set of code standard rules to check for WordPress.
+	</description>
 
 	<!--
 	#############################################################################
@@ -44,13 +46,13 @@
 	<file>.</file>
 
 	<!-- Exclude patterns. -->
-	<exclude-pattern>vendor/*</exclude-pattern>
-	<exclude-pattern>node_modules/*</exclude-pattern>
-    <exclude-pattern>languages/*</exclude-pattern>
-    <exclude-pattern>src/*</exclude-pattern>
+	<exclude-pattern>_*</exclude-pattern>	
     <exclude-pattern>dist/*</exclude-pattern>
     <exclude-pattern>docs/*</exclude-pattern>
-    <exclude-pattern>_report/*</exclude-pattern>
+    <exclude-pattern>languages/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>src/*</exclude-pattern>
+    <exclude-pattern>vendor/*</exclude-pattern>
 
 
 	<!--
@@ -110,7 +112,7 @@
 	#############################################################################
 	-->
 
-	<config name="testVersion" value="8.1-"/>
+	<config name="testVersion" value="7.2-"/>
 	<rule ref="PHPCompatibilityWP"/>
 
 </ruleset>

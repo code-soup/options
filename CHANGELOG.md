@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.0] - 2026-02-08
+## [1.0.0] - 2026-02-15
 
 Initial release.
 
@@ -15,5 +15,4 @@ Initial release.
 - Object caching with automatic invalidation
 - Revision history support
 - Submenu and top-level menu placement options
-- PSR-4 autoloading with PHP 8.1+ type safety
 - Comprehensive documentation and examples
