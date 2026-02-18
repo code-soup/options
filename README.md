@@ -106,6 +106,10 @@ $logo = Manager::get( 'theme_settings' )->get_option( 'general', 'site_logo' );
 - **[API Reference](docs/api.md)** - Complete method documentation
 - **[Migration Guide](docs/migration.md)** - Migrating post_type, prefix, and capabilities
 
+## Agent Skills
+
+AI-optimized documentation for agents is available in the `skills/` directory. See **[skills/README.md](skills/README.md)** for installation and usage.
+
 ## Configuration
 
 ```php
