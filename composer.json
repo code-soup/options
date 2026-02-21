@@ -2,7 +2,7 @@
 	"name": "codesoup/options",
 	"description": "Framework-agnostic WordPress options manager using custom post types. Supports ACF, custom metaboxes, and extensible integrations.",
 	"homepage": "https://www.codesoup.co",
-	"type": "wordpress-plugin",
+	"type": "package",
 	"license": "GPL-3.0-or-later",
 	"support": {
 		"issues": "https://github.com/code-soup/codesoup-options/issues"
