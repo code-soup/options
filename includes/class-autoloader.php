@@ -121,3 +121,9 @@ class Autoloader {
 		);
 	}
 }
+
+// Prevent multiple registrations.
+if ( ! class_exists( 'CodeSoup\Options\Manager' ) ) {
+	$autoloader = new Autoloader( dirname( __DIR__ ) );
+	$autoloader->register();
+}
