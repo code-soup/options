@@ -87,6 +87,7 @@ $manager->register_metabox(
 		'page'  => 'general',
 		'title' => 'Custom Settings',
 		'path'  => __DIR__ . '/templates/custom.php',
+		'class' => 'custom-settings-box',
 	)
 );
 ```
@@ -135,6 +136,7 @@ $manager->register_metabox(
 		'page'  => 'general',
 		'title' => 'Site Information',
 		'path'  => __DIR__ . '/templates/site-info.php',
+		'class' => 'site-info-metabox',
 	)
 );
 
@@ -505,6 +507,7 @@ array(
 	'context'  => 'normal',                     // Optional: normal, side, advanced
 	'priority' => 'default',                    // Optional: high, core, default, low
 	'order'    => 10,                           // Optional: Display order
+	'class'    => 'custom-metabox-class',       // Optional: Custom CSS class for postbox
 	'args'     => array(),                      // Optional: Custom data for template
 )
 ```
@@ -584,6 +587,7 @@ $manager->register_metabox(
 		'page'  => 'general',
 		'title' => 'Site Information',
 		'path'  => __DIR__ . '/templates/site-info.php',
+		'class' => 'site-info-metabox',
 	)
 );
 

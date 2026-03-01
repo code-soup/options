@@ -106,7 +106,7 @@ class Autoloader {
 		if ( ! str_ends_with( $filename, 'interface' ) ) {
 			$parts         = explode( '/', $filename );
 			$key           = count( $parts ) - 1;
-			$parts[ $key ] = sprintf('class-%s', $parts[ $key ]);
+			$parts[ $key ] = sprintf( 'class-%s', $parts[ $key ] );
 			$filename      = implode( '/', $parts );
 		}
 
@@ -124,6 +124,6 @@ class Autoloader {
 
 // Prevent multiple registrations.
 if ( ! class_exists( 'CodeSoup\Options\Manager' ) ) {
-	$autoloader = new Autoloader( dirname( __DIR__ ) );
-	$autoloader->register();
+	$codesoup_options_autoloader = new Autoloader( dirname( __DIR__ ) );
+	$codesoup_options_autoloader->register();
 }

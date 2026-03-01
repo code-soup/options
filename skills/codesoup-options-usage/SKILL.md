@@ -320,6 +320,7 @@ Register a custom metabox.
 - `$metabox_config['context']` - Optional: normal, side, advanced (default: normal)
 - `$metabox_config['priority']` - Optional: high, core, default, low (default: default)
 - `$metabox_config['order']` - Optional: Display order (default: 10)
+- `$metabox_config['class']` - Optional: Custom CSS class for postbox
 - `$metabox_config['args']` - Optional: Custom data for template
 
 **Throws:** `InvalidArgumentException` if validation fails
@@ -335,6 +336,7 @@ $manager->register_metabox(
 		'context'  => 'normal',
 		'priority' => 'high',
 		'order'    => 5,
+		'class'    => 'highlighted-metabox',
 		'args'     => array( 'custom_data' => 'value' ),
 	)
 );

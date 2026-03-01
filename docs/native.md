@@ -33,6 +33,7 @@ $manager->register_metabox(
 		'page'  => 'general',
 		'title' => 'Site Information',
 		'path'  => __DIR__ . '/templates/site-info.php',
+		'class' => 'site-info-metabox',
 	)
 );
 
@@ -78,6 +79,8 @@ $site_email = $options['site_email'] ?? '';
 ## Saving Data
 
 Hook into `save_post` and use `Manager::save_options()`:
+
+**Note:** The `save_options()` method uses direct database updates to prevent infinite loops. You can safely call it from within `save_post` hooks without worrying about recursion.
 
 ```php
 use CodeSoup\Options\Manager;

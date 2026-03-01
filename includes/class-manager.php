@@ -188,6 +188,9 @@ class Manager {
 	 * Use this method in your save_post hook to save custom metabox data.
 	 * Data is serialized and stored in post_content for retrieval via get_options().
 	 *
+	 * This method uses direct database updates to avoid triggering save_post hooks,
+	 * preventing infinite loops when called from within save_post callbacks.
+	 *
 	 * Example:
 	 * add_action( 'save_post', function( $post_id ) {
 	 *     $manager = Manager::get( 'site_settings' );
@@ -283,23 +286,39 @@ class Manager {
 
 			$serialized = maybe_serialize( $data );
 
-			$result = wp_update_post(
+			// Use direct database update to avoid triggering save_post hooks
+			// which would cause infinite loops when called from save_post.
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Intentional to prevent infinite loops.
+			$result = $wpdb->update(
+				$wpdb->posts,
 				array(
-					'ID'           => $post_id,
 					'post_content' => $serialized,
 				),
-				true
+				array(
+					'ID' => $post_id,
+				),
+				array(
+					'%s',
+				),
+				array(
+					'%d',
+				)
 			);
 
-			if ( is_wp_error( $result ) ) {
+			if ( false === $result ) {
 				throw new \InvalidArgumentException(
 					sprintf(
-						/* translators: %s: error message */
-						__( 'Failed to save options: %s', 'codesoup-options' ),
-						$result->get_error_message()
+						/* translators: %d: post ID */
+						__( 'Failed to save options for post %d.', 'codesoup-options' ),
+						$post_id
 					)
 				);
 			}
+
+			// Clear post cache to ensure fresh data on next read.
+			clean_post_cache( $post_id );
 
 			$this->invalidate_cache( $post_id );
 
@@ -796,15 +815,19 @@ class Manager {
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 		add_action( 'admin_notices', array( $this, 'show_creation_errors' ) );
 		add_action( 'add_meta_boxes', array( $this, 'register_metaboxes' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'disable_title_edit' ) );
 		add_action( 'before_delete_post', array( $this, 'invalidate_cache_on_delete' ) );
 		add_action( 'wp_trash_post', array( $this, 'invalidate_cache_on_delete' ) );
 		add_filter( 'pre_get_posts', array( $this, 'filter_posts_by_capability' ) );
 		add_filter( "views_edit-{$this->config['post_type']}", '__return_empty_array' );
+		add_filter( "bulk_actions-edit-{$this->config['post_type']}", '__return_empty_array' );
+		add_filter( 'months_dropdown_results', array( $this, 'disable_months_dropdown' ), 10, 2 );
 		add_filter( "manage_{$this->config['post_type']}_posts_columns", array( $this, 'customize_columns' ) );
 		add_action( "manage_{$this->config['post_type']}_posts_custom_column", array( $this, 'render_custom_column' ), 10, 2 );
 		add_filter( 'post_row_actions', array( $this, 'remove_row_actions' ), 10, 2 );
 		add_filter( 'parent_file', array( $this, 'set_parent_file' ) );
 		add_filter( 'submenu_file', array( $this, 'set_submenu_file' ) );
+		add_filter( 'wp_insert_post_data', array( $this, 'prevent_title_update' ), 10, 2 );
 
 		// Register integration hooks.
 		foreach ( $this->integrations as $integration ) {
@@ -931,9 +954,9 @@ class Manager {
 				}
 
 				// Update description if needed.
-				$current_post     = get_post( $post_id );
-				$current_excerpt  = $current_post ? $current_post->post_excerpt : '';
-				$desired_excerpt  = $page->description ?? '';
+				$current_post    = get_post( $post_id );
+				$current_excerpt = $current_post ? $current_post->post_excerpt : '';
+				$desired_excerpt = $page->description ?? '';
 				if ( $current_excerpt !== $desired_excerpt ) {
 					wp_update_post(
 						array(
@@ -1063,6 +1086,7 @@ class Manager {
 	 * @return array
 	 */
 	public function customize_columns( array $columns ): array {
+		unset( $columns['cb'] );
 		unset( $columns['date'] );
 
 		$columns['description'] = __( 'Description', 'codesoup-options' );
@@ -1110,6 +1134,78 @@ class Manager {
 			unset( $actions['trash'] );
 		}
 		return $actions;
+	}
+
+	/**
+	 * Disable months dropdown filter for our post type
+	 *
+	 * @param object[]    $months    Array of month objects.
+	 * @param string|null $post_type The post type.
+	 * @return object[] Empty array to disable the dropdown.
+	 */
+	public function disable_months_dropdown( array $months, ?string $post_type ): array {
+		if ( $post_type === $this->config['post_type'] ) {
+			return array();
+		}
+		return $months;
+	}
+
+	/**
+	 * Disable title editing for options pages
+	 *
+	 * @param string $hook Current admin page hook.
+	 * @return void
+	 */
+	public function disable_title_edit( string $hook ): void {
+		// Only on post.php screen for our post type.
+		if ( 'post.php' !== $hook ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || $screen->post_type !== $this->config['post_type'] ) {
+			return;
+		}
+
+		// Add inline CSS to make title readonly.
+		wp_add_inline_style(
+			'wp-admin',
+			'#post-body-content #title { pointer-events: none; opacity: 0.6; }'
+		);
+	}
+
+	/**
+	 * Prevent title updates for options pages
+	 *
+	 * Restores the original title if someone tries to change it via inspector or API.
+	 *
+	 * @param array $data    An array of slashed, sanitized, and processed post data.
+	 * @param array $postarr An array of sanitized (and slashed) but otherwise unmodified post data.
+	 * @return array Modified post data with original title restored.
+	 */
+	public function prevent_title_update( array $data, array $postarr ): array {
+		// Only for our post type.
+		if ( ! isset( $data['post_type'] ) || $data['post_type'] !== $this->config['post_type'] ) {
+			return $data;
+		}
+
+		// Only for updates (not new posts).
+		if ( empty( $postarr['ID'] ) ) {
+			return $data;
+		}
+
+		// Get the original post.
+		$original_post = get_post( $postarr['ID'] );
+		if ( ! $original_post ) {
+			return $data;
+		}
+
+		// Restore original title if it was changed.
+		if ( $data['post_title'] !== $original_post->post_title ) {
+			$data['post_title'] = $original_post->post_title;
+		}
+
+		return $data;
 	}
 
 	/**
@@ -1337,6 +1433,9 @@ class Manager {
 				'path'     => __DIR__ . '/metabox/actions.php',
 				'context'  => 'side',
 				'priority' => 'high',
+				'args'     => array(
+					'manager' => $this,
+				),
 			)
 		);
 
@@ -1455,16 +1554,6 @@ class Manager {
 	}
 
 	/**
-	 * Denormalize slug by converting dashes to underscores
-	 *
-	 * @param string $slug Slug to denormalize.
-	 * @return string Denormalized slug with underscores.
-	 */
-	public static function denormalize_slug( string $slug ): string {
-		return str_replace( '-', '_', $slug );
-	}
-
-	/**
 	 * Get post name from page ID
 	 *
 	 * @param string $page_id Page identifier.
@@ -1484,8 +1573,7 @@ class Manager {
 		$normalized_prefix = self::normalize_slug( $this->config['prefix'] );
 
 		if ( strpos( $post_name, $normalized_prefix ) === 0 ) {
-			$page_id_normalized = substr( $post_name, strlen( $normalized_prefix ) );
-			return self::denormalize_slug( $page_id_normalized );
+			return substr( $post_name, strlen( $normalized_prefix ) );
 		}
 
 		return null;

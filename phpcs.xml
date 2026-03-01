@@ -47,11 +47,8 @@
 
 	<!-- Exclude patterns. -->
 	<exclude-pattern>_*</exclude-pattern>	
-    <exclude-pattern>dist/*</exclude-pattern>
     <exclude-pattern>docs/*</exclude-pattern>
-    <exclude-pattern>languages/*</exclude-pattern>
-    <exclude-pattern>node_modules/*</exclude-pattern>
-    <exclude-pattern>src/*</exclude-pattern>
+    <exclude-pattern>skills/*</exclude-pattern>
     <exclude-pattern>vendor/*</exclude-pattern>
 
 
@@ -102,6 +99,7 @@
 		<properties>
 			<property name="prefixes" type="array">
 				<element value="CodeSoup\Options"/>
+				<element value="codesoup_options"/>
 			</property>
 		</properties>
 	</rule>
@@ -112,7 +110,7 @@
 	#############################################################################
 	-->
 
-	<config name="testVersion" value="7.2-"/>
+	<config name="testVersion" value="7.4-"/>
 	<rule ref="PHPCompatibilityWP"/>
 
 </ruleset>

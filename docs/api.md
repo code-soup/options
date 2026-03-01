@@ -35,6 +35,8 @@ Retrieve an existing manager instance.
 
 Save options data for native metaboxes. Data is serialized and stored in post_content.
 
+**Implementation Note:** Uses direct database updates (`$wpdb->update()`) instead of `wp_update_post()` to prevent infinite loops when called from `save_post` hooks.
+
 **Parameters:**
 - `$post_id` - Post ID
 - `$data` - Data array to save
@@ -311,8 +313,51 @@ array(
 	'context'  => 'normal',                     // Optional: normal, side, advanced
 	'priority' => 'default',                    // Optional: high, core, default, low
 	'order'    => 10,                           // Optional: Display order
+	'class'    => 'custom-metabox-class',       // Optional: Custom CSS class(es) for postbox
 	'args'     => array(),                      // Optional: Custom data for template
 )
+```
+
+**Custom CSS Classes:**
+- The `class` parameter is optional and adds custom CSS classes to the metabox postbox element
+- Accepts string (space-separated) or array of class names
+- Each class is sanitized using `sanitize_html_class()` for security
+- Applied via WordPress `postbox_classes_{$post_type}_{$id}` filter
+- Only applied if a non-empty value is provided
+- Duplicates are automatically removed
+- Useful for custom styling or JavaScript targeting
+
+**Examples:**
+```php
+// Single class (string)
+$manager->register_metabox(
+	array(
+		'page'  => 'general',
+		'title' => 'Advanced Settings',
+		'path'  => __DIR__ . '/templates/advanced.php',
+		'class' => 'highlighted-metabox',
+	)
+);
+
+// Multiple classes (space-separated string)
+$manager->register_metabox(
+	array(
+		'page'  => 'general',
+		'title' => 'Advanced Settings',
+		'path'  => __DIR__ . '/templates/advanced.php',
+		'class' => 'highlighted-metabox custom-border',
+	)
+);
+
+// Multiple classes (array)
+$manager->register_metabox(
+	array(
+		'page'  => 'general',
+		'title' => 'Advanced Settings',
+		'path'  => __DIR__ . '/templates/advanced.php',
+		'class' => array( 'highlighted-metabox', 'custom-border', 'priority-high' ),
+	)
+);
 ```
 
 ---

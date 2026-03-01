@@ -62,6 +62,7 @@ $manager->register_metabox(
 		'page'  => 'general',
 		'title' => 'Site Information',
 		'path'  => __DIR__ . '/templates/site-info.php',
+		'class' => 'site-info-metabox',
 	)
 );
 

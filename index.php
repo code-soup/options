@@ -30,8 +30,7 @@ defined( 'ABSPATH' ) || die;
 /**
  * Prevent in case multiple instances of package exist.
  */
-if ( class_exists( 'CodeSoup\Options\Autoloader' ) )
-{
+if ( class_exists( 'CodeSoup\Options\Autoloader' ) ) {
 	return;
 }
 
@@ -40,7 +39,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require_once __DIR__ . '/vendor/autoload.php';
 }
 
-( function () {		
-	$autoloader = new CodeSoup\Options\Autoloader( dirname( __FILE__ ) );
+( function () {
+	$autoloader = new CodeSoup\Options\Autoloader( __DIR__ );
 	$autoloader->register();
 } )();
