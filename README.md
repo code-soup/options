@@ -9,6 +9,7 @@ Manage WordPress options using custom post types instead of the wp_options table
 - **Revision History** - Track changes over time
 - **Post Locking** - Prevent concurrent edits
 - **Better Organization** - Multiple option pages with capability control
+- **Tabbed UI** - Modern tabbed interface with horizontal or vertical tabs
 - **Built-in ACF Integration** - Works out of the box with Advanced Custom Fields
 - **Extensible** - Can be extended to use with CMB2, MetaBox.io, Carbon Fields, or native metaboxes
 
@@ -101,6 +102,7 @@ $logo = Manager::get( 'theme_settings' )->get_option( 'general', 'site_logo' );
 ## Documentation
 
 - **[Examples](docs/examples/)** - Working code examples
+- **[Tabbed UI](docs/tabbed-ui.md)** - Modern tabbed interface
 - **[Native Metaboxes](docs/native.md)** - Using without any framework
 - **[ACF Integration](docs/acf.md)** - Using with Advanced Custom Fields
 - **[Custom Integrations](docs/custom-integrations.md)** - CMB2, MetaBox.io, Carbon Fields
@@ -126,6 +128,8 @@ Manager::create(
 		'revisions'      => true,
 		'cache_duration' => HOUR_IN_SECONDS,
 		'debug'          => false,
+		'ui_mode'        => 'pages',  // 'pages' or 'tabs'
+		'tab_position'   => 'top',    // 'top', 'left', or 'right'
 		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,

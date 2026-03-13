@@ -62,6 +62,8 @@ class Manager {
 		'parent_menu'    => null,
 		'cache_duration' => HOUR_IN_SECONDS,
 		'debug'          => false,
+		'ui_mode'        => 'pages',
+		'tab_position'   => 'top',
 		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,
@@ -153,6 +155,20 @@ class Manager {
 	 * @var Logger
 	 */
 	private Logger $logger;
+
+	/**
+	 * Admin page handler
+	 *
+	 * @var AdminPage|null
+	 */
+	private ?AdminPage $admin_page = null;
+
+	/**
+	 * Form handler
+	 *
+	 * @var FormHandler|null
+	 */
+	private ?FormHandler $form_handler = null;
 
 	/**
 	 * Create a new Manager instance
@@ -465,6 +481,11 @@ class Manager {
 		$this->cache  = new Cache( $this->instance_key, $cache_group, $this->config['cache_duration'] );
 		$this->logger = new Logger( $this->instance_key, $this->config['debug'] );
 
+		if ( 'tabs' === $this->config['ui_mode'] ) {
+			$this->admin_page   = new AdminPage( $this );
+			$this->form_handler = new FormHandler( $this );
+		}
+
 		$this->load_integrations();
 	}
 
@@ -573,6 +594,51 @@ class Manager {
 			throw new \InvalidArgumentException(
 				esc_html__( 'Config "debug" must be a boolean.', 'codesoup-options' )
 			);
+		}
+
+		// Validate ui_mode is valid.
+		if ( isset( $this->config['ui_mode'] ) ) {
+			$valid_modes = array(
+				'pages',
+				'tabs',
+			);
+			if ( ! in_array(
+				$this->config['ui_mode'],
+				$valid_modes,
+				true
+			) ) {
+				throw new \InvalidArgumentException(
+					sprintf(
+						/* translators: 1: provided value, 2: comma-separated list of valid values */
+						esc_html__( 'Config "ui_mode" must be one of: %2$s. "%1$s" given.', 'codesoup-options' ),
+						esc_html( $this->config['ui_mode'] ),
+						esc_html( implode( ', ', $valid_modes ) )
+					)
+				);
+			}
+		}
+
+		// Validate tab_position is valid.
+		if ( isset( $this->config['tab_position'] ) ) {
+			$valid_positions = array(
+				'top',
+				'left',
+				'right',
+			);
+			if ( ! in_array(
+				$this->config['tab_position'],
+				$valid_positions,
+				true
+			) ) {
+				throw new \InvalidArgumentException(
+					sprintf(
+						/* translators: 1: provided value, 2: comma-separated list of valid values */
+						esc_html__( 'Config "tab_position" must be one of: %2$s. "%1$s" given.', 'codesoup-options' ),
+						esc_html( $this->config['tab_position'] ),
+						esc_html( implode( ', ', $valid_positions ) )
+					)
+				);
+			}
 		}
 
 		// Validate prefix doesn't use reserved values.
@@ -834,6 +900,10 @@ class Manager {
 			$integration->register_hooks();
 		}
 
+		if ( $this->form_handler ) {
+			$this->form_handler->register_hooks();
+		}
+
 		$this->hooks_registered = true;
 	}
 
@@ -849,6 +919,8 @@ class Manager {
 			$supports[] = 'revisions';
 		}
 
+		$show_ui = 'pages' === $this->config['ui_mode'];
+
 		register_post_type(
 			$this->config['post_type'],
 			array(
@@ -858,7 +930,7 @@ class Manager {
 				),
 				'public'              => false,
 				'publicly_queryable'  => false,
-				'show_ui'             => true,
+				'show_ui'             => $show_ui,
 				'show_in_menu'        => false,
 				'query_var'           => false,
 				'rewrite'             => false,
@@ -883,17 +955,21 @@ class Manager {
 	 * @return void
 	 */
 	public function maybe_ensure_pages_exist( \WP_Screen $screen ): void {
-		// Only run on our post type screens.
-		if ( $screen->post_type !== $this->config['post_type'] ) {
-			return;
-		}
+		if ( 'tabs' === $this->config['ui_mode'] ) {
+			if ( isset( $_GET['page'] ) && $_GET['page'] === $this->admin_page->get_page_slug() ) {
+				$this->ensure_pages_exist();
+			}
+		} else {
+			if ( $screen->post_type !== $this->config['post_type'] ) {
+				return;
+			}
 
-		// Only run on list and edit screens.
-		if ( ! in_array( $screen->base, array( 'edit', 'post' ), true ) ) {
-			return;
-		}
+			if ( ! in_array( $screen->base, array( 'edit', 'post' ), true ) ) {
+				return;
+			}
 
-		$this->ensure_pages_exist();
+			$this->ensure_pages_exist();
+		}
 	}
 
 	/**
@@ -1325,7 +1401,7 @@ class Manager {
 	public function register_admin_menu(): void {
 		// Check if user can access at least one page and get the first accessible capability.
 		$has_access     = false;
-		$min_capability = 'manage_options'; // Default fallback.
+		$min_capability = 'manage_options';
 
 		foreach ( $this->pages as $page ) {
 			if ( current_user_can( $page->capability ) ) {
@@ -1335,30 +1411,40 @@ class Manager {
 			}
 		}
 
-		// Don't show menu if user has no access to any page.
 		if ( ! $has_access ) {
 			return;
 		}
 
-		$menu_slug = 'edit.php?post_type=' . $this->config['post_type'];
+		if ( 'tabs' === $this->config['ui_mode'] ) {
+			$menu_slug     = $this->admin_page->get_page_slug();
+			$menu_callback = array(
+				$this->admin_page,
+				'render',
+			);
+		} else {
+			$menu_slug     = sprintf(
+				'edit.php?post_type=%s',
+				$this->config['post_type']
+			);
+			$menu_callback = '';
+		}
 
-		// Register as submenu if parent_menu is specified.
 		if ( ! empty( $this->config['parent_menu'] ) ) {
 			add_submenu_page(
 				$this->config['parent_menu'],
 				$this->config['menu_label'],
 				$this->config['menu_label'],
 				$min_capability,
-				$menu_slug
+				$menu_slug,
+				$menu_callback
 			);
 		} else {
-			// Register as top-level menu.
 			add_menu_page(
 				$this->config['menu_label'],
 				$this->config['menu_label'],
 				$min_capability,
 				$menu_slug,
-				'',
+				$menu_callback,
 				$this->config['menu_icon'],
 				$this->config['menu_position']
 			);
@@ -1414,6 +1500,19 @@ class Manager {
 	 * @return void
 	 */
 	public function register_metaboxes(): void {
+		if ( 'tabs' === $this->config['ui_mode'] ) {
+			$this->register_metaboxes_tabs_mode();
+		} else {
+			$this->register_metaboxes_pages_mode();
+		}
+	}
+
+	/**
+	 * Register metaboxes for pages mode
+	 *
+	 * @return void
+	 */
+	private function register_metaboxes_pages_mode(): void {
 		$screen = get_current_screen();
 		if ( ! $screen || $screen->post_type !== $this->config['post_type'] ) {
 			return;
@@ -1425,7 +1524,6 @@ class Manager {
 			'side'
 		);
 
-		// Register actions metabox.
 		$actions_metabox = new Metabox(
 			array(
 				'page'     => 'all',
@@ -1448,7 +1546,6 @@ class Manager {
 			return;
 		}
 
-		// Metaboxes are already sorted during init().
 		global $post;
 
 		foreach ( $this->metaboxes as $metabox ) {
@@ -1463,6 +1560,66 @@ class Manager {
 			}
 
 			if ( $page_id === $metabox->page ) {
+				$metabox_id = sprintf(
+					'%s_%s',
+					$this->instance_key,
+					$metabox->page
+				);
+				$metabox->register( $metabox_id, $this->config['post_type'] );
+			}
+		}
+	}
+
+	/**
+	 * Register metaboxes for tabs mode
+	 *
+	 * @return void
+	 */
+	private function register_metaboxes_tabs_mode(): void {
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		if ( ! isset( $_GET['page'] ) || $_GET['page'] !== $this->admin_page->get_page_slug() ) {
+			return;
+		}
+
+		$active_tab = $this->admin_page->get_active_tab();
+		if ( ! $active_tab ) {
+			return;
+		}
+
+		remove_meta_box(
+			'submitdiv',
+			$this->config['post_type'],
+			'side'
+		);
+
+		$actions_metabox = new Metabox(
+			array(
+				'page'     => 'all',
+				'title'    => __( 'Actions', 'codesoup-options' ),
+				'path'     => __DIR__ . '/metabox/actions.php',
+				'context'  => 'side',
+				'priority' => 'high',
+				'args'     => array(
+					'manager' => $this,
+				),
+			)
+		);
+
+		$actions_metabox->register(
+			sprintf( '%s_actions', $this->instance_key ),
+			$this->config['post_type']
+		);
+
+		if ( empty( $this->metaboxes ) ) {
+			return;
+		}
+
+		foreach ( $this->metaboxes as $metabox ) {
+			if ( $active_tab === $metabox->page ) {
 				$metabox_id = sprintf(
 					'%s_%s',
 					$this->instance_key,
@@ -1800,5 +1957,14 @@ class Manager {
 	 */
 	public function get_integrations(): array {
 		return $this->integrations;
+	}
+
+	/**
+	 * Get admin page handler
+	 *
+	 * @return AdminPage|null
+	 */
+	public function get_admin_page(): ?AdminPage {
+		return $this->admin_page;
 	}
 }
