@@ -4,6 +4,25 @@
 
 Manage WordPress options using custom post types instead of the wp_options table. Includes built-in Advanced Custom Fields integration and can be extended to use with any field framework (CMB2, MetaBox.io, Carbon Fields) or native metaboxes.
 
+## AI Skills Available via Skillshare
+
+This package includes AI agent skills that can be installed via Skillshare:
+
+```bash
+# Install all skills
+skillshare install code-soup/codesoup-options --all && skillshare sync
+
+# Or install specific skills
+skillshare install code-soup/codesoup-options -s codesoup-options-setup,codesoup-options-usage
+```
+
+**Available skills:**
+- **codesoup-options-setup** - Set up and configure the plugin
+- **codesoup-options-usage** - Retrieve and save options using the API
+- **codesoup-options-migration** - Migrate configurations
+
+See [SKILLSHARE.md](SKILLSHARE.md) for detailed installation instructions and [skills/README.md](skills/README.md) for skill documentation.
+
 ## Why Custom Post Types?
 
 - **Revision History** - Track changes over time
@@ -109,7 +128,22 @@ $logo = Manager::get( 'theme_settings' )->get_option( 'general', 'site_logo' );
 
 ## Agent Skills
 
-AI-optimized documentation for agents is available in the `skills/` directory. See **[skills/README.md](skills/README.md)** for installation and usage.
+AI-optimized documentation for agents is available in the `skills/` directory.
+
+**Quick Install with Skillshare:**
+
+```bash
+# Install all skills globally
+skillshare install code-soup/codesoup-options --all && skillshare sync
+
+# Or install to project only
+skillshare install code-soup/codesoup-options --all -p && skillshare sync
+```
+
+**Documentation:**
+
+- **[SKILLSHARE.md](SKILLSHARE.md)** - Skillshare installation and usage guide
+- **[skills/README.md](skills/README.md)** - Detailed skills documentation
 
 ## Configuration
 
@@ -142,5 +176,5 @@ GPL-3.0+
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/codesoup/options/issues)
-- **Website:** [codesoup.co](https://www.codesoup.co)
+- **Issues:** GitHub Issues
+- **Website:** codesoup.co

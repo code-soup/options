@@ -1,11 +1,25 @@
 ---
-name: CodeSoup Options Migration
-description: Migrate CodeSoup Options configuration when changing post_type, prefix, or capabilities. Handle database migrations, rename posts, sync capabilities, backup data, troubleshoot migration issues.
+name: codesoup-options-migration
+description: Migrate CodeSoup Options configuration when changing post_type, prefix, or capabilities. Handle database migrations, rename posts, sync capabilities, backup data, troubleshoot migration issues. Use when changing post_type configuration, changing prefix configuration, updating page capabilities in existing installations, or migrating from old to new configuration.
+license: GPL-3.0-or-later
+metadata:
+  author: code-soup
+  version: "1.0.0"
+  package: codesoup/options
 ---
 
 # CodeSoup Options Migration
 
 Migrate CodeSoup Options configuration when changing post type, prefix, or capabilities.
+
+## Examples
+
+Complete working examples are available in the `examples/` directory:
+
+- [Basic Migration](examples/basic-migration.md) - Change post_type and prefix
+- [Prefix Only](examples/prefix-only.md) - Change prefix only
+- [Capabilities Sync](examples/capabilities-sync.md) - Update capabilities only
+- [WP-CLI Migration](examples/wpcli-migration.md) - Run via WP-CLI (recommended)
 
 ## When to Use This Skill
 
@@ -18,14 +32,7 @@ Migrate CodeSoup Options configuration when changing post type, prefix, or capab
 
 ### Step 1: Backup Your Data
 
-**CRITICAL:** Always backup your database before running migrations.
-
-```bash
-# Using WP-CLI
-wp db export backup-before-migration.sql
-
-# Or use your hosting provider's backup tools
-```
+**CRITICAL:** Always backup your database before running migrations using WP-CLI (`wp db export`) or your hosting provider's backup tools.
 
 ### Step 2: Prepare Migration Code
 
@@ -36,95 +43,11 @@ The `Migration` class handles renaming posts and syncing capabilities.
 2. Update your code with new configuration
 3. Run the migration once
 
-### Example: Changing Post Type and Prefix
-
-**Old configuration:**
-
-```php
-use CodeSoup\Options\Manager;
-
-$manager = Manager::create(
-	'site_settings',
-	array(
-		'post_type' => 'old_options',
-		'prefix'    => 'old_',
-	)
-);
-```
-
-**New configuration:**
-
-```php
-use CodeSoup\Options\Manager;
-
-$manager = Manager::create(
-	'site_settings',
-	array(
-		'post_type' => 'new_options',
-		'prefix'    => 'new_',
-	)
-);
-```
-
-**Migration script:**
-
-```php
-use CodeSoup\Options\Migration;
-use CodeSoup\Options\Manager;
-
-// Initialize Manager with NEW configuration
-$manager = Manager::create(
-	'site_settings',
-	array(
-		'post_type' => 'new_options',
-		'prefix'    => 'new_',
-	)
-);
-
-$manager->register_page(
-	array(
-		'id'         => 'general',
-		'title'      => 'General Settings',
-		'capability' => 'manage_options',
-	)
-);
-
-$manager->init();
-
-// Run migration with OLD configuration
-$old_config = array(
-	'post_type' => 'old_options',
-	'prefix'    => 'old_',
-);
-
-$new_pages = array(
-	array(
-		'id'         => 'general',
-		'capability' => 'manage_options',
-	),
-);
-
-$result = Migration::migrate( 'site_settings', $old_config, $new_pages );
-
-// Check results
-if ( $result['success'] ) {
-	echo sprintf(
-		'Migration complete: %d posts updated, %d post types changed, %d prefixes changed, %d capabilities synced',
-		$result['posts_updated'],
-		$result['post_type_changed'],
-		$result['prefix_changed'],
-		$result['capabilities_synced']
-	);
-} else {
-	echo 'Migration failed: ' . $result['error'];
-}
-
-if ( ! empty( $result['errors'] ) ) {
-	foreach ( $result['errors'] as $error ) {
-		echo 'Error: ' . $error . "\n";
-	}
-}
-```
+**See Examples:**
+- [Basic Migration](examples/basic-migration.md) - Complete example changing post_type and prefix
+- [Prefix Only](examples/prefix-only.md) - Change prefix only
+- [Capabilities Sync](examples/capabilities-sync.md) - Update capabilities only
+- [WP-CLI Migration](examples/wpcli-migration.md) - Recommended approach using WP-CLI
 
 ### Step 3: Run Migration
 
