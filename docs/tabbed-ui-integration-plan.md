@@ -53,7 +53,7 @@ Add new config options:
 
 ```php
 'ui_mode' => 'pages'    // 'pages' (default) or 'tabs'
-'tab_position' => 'top' // 'top', 'left', 'right' (only applies when ui_mode = 'tabs')
+'tab_position' => 'top' // 'top', 'left' (only applies when ui_mode = 'tabs')
 ```
 
 ---
@@ -66,7 +66,7 @@ Add new config options:
 
 Features:
 
-- Render tab navigation based on position (top/left/right)
+- Render tab navigation based on position (top/left)
 - Handle active state
 - Accessibility (ARIA labels, keyboard navigation)
 
@@ -236,7 +236,7 @@ $manager = Manager::create(
     array(
         'menu_label'   => 'Site Settings',
         'ui_mode'      => 'tabs',
-        'tab_position' => 'left', // 'top', 'left', 'right'
+        'tab_position' => 'left', // 'top', 'left'
         'integrations' => array(
             'acf' => array( 'enabled' => false ),
         ),
@@ -311,7 +311,7 @@ $manager->register_metabox(
 
 1. **Unit Tests** - Test tab configuration, navigation logic
 2. **Integration Tests** - Test with native metaboxes
-3. **UI Tests** - Test all tab positions (top/left/right)
+3. **UI Tests** - Test all tab positions (top/left)
 4. **Compatibility Tests** - Test with different WordPress versions
 5. **Accessibility Tests** - Screen reader, keyboard navigation
 6. **Form Submission Tests** - Test save functionality in tabs mode

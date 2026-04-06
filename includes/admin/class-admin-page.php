@@ -48,13 +48,8 @@ class AdminPage {
 		$this->manager      = $manager;
 		$this->instance_key = $manager->get_instance_key();
 
-		add_action(
-			'admin_enqueue_scripts',
-			array(
-				$this,
-				'enqueue_assets',
-			)
-		);
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_filter( 'admin_body_class', array( $this, 'add_body_class' ) );
 	}
 
 	/**
@@ -140,10 +135,10 @@ class AdminPage {
 			);
 		}
 
-		$pages        = $this->manager->get_pages();
+		$tab_pages    = $this->manager->get_pages();
 		$tab_position = $this->manager->get_config( 'tab_position' );
 
-		require __DIR__ . '/ui/templates/admin-page-wrapper.php';
+		require dirname( __DIR__ ) . '/templates/tabs/wrapper.php';
 	}
 
 	/**
@@ -163,35 +158,60 @@ class AdminPage {
 	}
 
 	/**
+	 * Add body class
+	 *
+	 * @param string $classes Current body classes.
+	 * @return string
+	 */
+	public function add_body_class( string $classes ): string {
+		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+
+		if ( $page === $this->get_page_slug() ) {
+			$classes .= ' codesoup-options-tabbed-ui';
+		}
+
+		return $classes;
+	}
+
+	/**
 	 * Enqueue assets
 	 *
 	 * @param string $hook Current admin page hook.
 	 * @return void
 	 */
 	public function enqueue_assets( string $hook ): void {
-		if ( ! isset( $_GET['page'] ) || $_GET['page'] !== $this->get_page_slug() ) {
+		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+		if ( $page !== $this->get_page_slug() ) {
 			return;
 		}
 
-		$plugin_dir_url = plugin_dir_url( dirname( __FILE__ ) );
+		// Get base URL (works for both plugin and composer package)
+		$base_path = dirname( dirname( __DIR__ ) );
+		$base_url  = str_replace( ABSPATH, home_url( '/' ), $base_path );
 
-		wp_enqueue_style(
-			'codesoup-options-tabs',
-			$plugin_dir_url . 'assets/css/admin-tabs.css',
-			array(),
-			'1.2.0'
-		);
+		// Enqueue styles unless disabled
+		if ( ! $this->manager->get_config( 'disable_styles' ) ) {
+			wp_enqueue_style(
+				'codesoup-options-tabs',
+				$base_url . '/assets/css/admin-tabs.css',
+				array(),
+				'1.2.0'
+			);
+		}
 
-		wp_enqueue_script(
-			'codesoup-options-tabs',
-			$plugin_dir_url . 'assets/js/admin-tabs.js',
-			array( 'jquery' ),
-			'1.2.0',
-			true
-		);
+		// Enqueue scripts unless disabled
+		if ( ! $this->manager->get_config( 'disable_scripts' ) ) {
+			wp_enqueue_script(
+				'codesoup-options-tabs',
+				$base_url . '/assets/js/admin-tabs.js',
+				array( 'jquery' ),
+				'1.2.0',
+				true
+			);
+		}
 
+		// Always enqueue WordPress core scripts
 		wp_enqueue_script( 'postbox' );
 		wp_enqueue_style( 'wp-admin' );
 	}
 }
-

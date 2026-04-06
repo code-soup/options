@@ -75,8 +75,9 @@ class Migration {
 		$posts = get_posts(
 			array(
 				'post_type'      => $old_post_type ?? $new_post_type,
-				'posts_per_page' => -1,
+				'posts_per_page' => 100,
 				'post_status'    => 'any',
+				'no_found_rows'  => true,
 			)
 		);
 

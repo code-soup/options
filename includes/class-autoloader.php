@@ -79,11 +79,12 @@ class Autoloader {
 	 *
 	 * Transformation steps:
 	 * 1. Remove namespace prefix: CodeSoup\Options\Manager → Manager
-	 * 2. Convert namespace separators: Integrations\ACF\Init → Integrations/ACF/Init
-	 * 3. Convert PascalCase to kebab-case: IntegrationInterface → integration-interface
-	 * 4. Convert to lowercase: Manager → manager
-	 * 5. Add class- prefix (except for interfaces): manager → class-manager
-	 * 6. Add .php extension: class-manager → class-manager.php
+	 * 2. Map to subdirectory: AdminPage → admin/AdminPage
+	 * 3. Convert namespace separators: Integrations\ACF\Init → Integrations/ACF/Init
+	 * 4. Convert PascalCase to kebab-case: IntegrationInterface → integration-interface
+	 * 5. Convert to lowercase: Manager → manager
+	 * 6. Add class- prefix (except for interfaces): manager → class-manager
+	 * 7. Add .php extension: class-manager → class-manager.php
 	 *
 	 * @param string $class_name Fully qualified class name.
 	 * @return string File path.
@@ -91,6 +92,24 @@ class Autoloader {
 	private function get_file_path( string $class_name ): string {
 		// Remove namespace prefix.
 		$relative_class = str_replace( self::NAMESPACE_PREFIX, '', $class_name );
+
+		// Map core classes to subdirectories.
+		$class_mapping = array(
+			'Cache'            => 'core/Cache',
+			'Logger'           => 'core/Logger',
+			'Page'             => 'core/Page',
+			'Metabox'          => 'core/Metabox',
+			'AdminHeader'      => 'admin/AdminHeader',
+			'AdminPage'        => 'admin/AdminPage',
+			'FormHandler'      => 'admin/FormHandler',
+			'PagesListPage'    => 'admin/PagesListPage',
+			'PagesListTable'   => 'admin/PagesListTable',
+			'Migration'        => 'utilities/Migration',
+		);
+
+		if ( isset( $class_mapping[ $relative_class ] ) ) {
+			$relative_class = $class_mapping[ $relative_class ];
+		}
 
 		// Convert namespace separators to directory separators.
 		$relative_class = str_replace( '\\', '/', $relative_class );

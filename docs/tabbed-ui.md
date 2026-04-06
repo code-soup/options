@@ -1,13 +1,21 @@
 # Tabbed UI Mode
 
-The plugin supports two UI modes for displaying options pages:
+You can display your options pages in two different ways:
 
-- **Pages Mode** (default) - Uses WordPress's native post list interface
-- **Tabs Mode** - Custom tabbed interface with horizontal or vertical tab navigation
+- **Pages Mode** (default) - Each page gets its own editor, shown in a list table
+- **Tabs Mode** - Everything on one admin page with tabs to switch between sections
 
-## Configuration
+## A Note About Tabs Mode
 
-Enable tabbed UI mode by setting `ui_mode` to `'tabs'` in your Manager configuration:
+Tabs mode works with native WordPress metaboxes. If you're using a field framework like ACF, CMB2, MetaBox.io, or Carbon Fields, the plugin will use Pages Mode instead. This happens because these frameworks expect to work with individual post editors.
+
+If you'd like to use Tabs mode:
+1. Disable all field framework integrations in your config
+2. Use native WordPress metaboxes (register them with `register_metabox()`)
+
+## Setting Up Tabs Mode
+
+To use tabs mode, set `ui_mode` to `'tabs'` and disable integrations:
 
 ```php
 use CodeSoup\Options\Manager;
@@ -16,40 +24,114 @@ $manager = Manager::create(
     'site_settings',
     array(
         'menu_label'   => 'Site Settings',
-        'ui_mode'      => 'tabs',        // Enable tabbed UI
-        'tab_position' => 'left',        // 'top', 'left', or 'right'
+        'ui_mode'      => 'tabs',        // Enable tabbed UI (requires no integrations)
         'integrations' => array(
-            'acf' => array( 'enabled' => false ),
+            'acf' => array( 'enabled' => false ),  // Required for tabs mode
         ),
     )
 );
 ```
 
-## Tab Positions
+## How It Looks
 
-### Top Tabs (Horizontal)
+Tabs mode gives you a 3-column layout:
 
-```php
-'tab_position' => 'top'
+```
+┌────────┬──────────────────┬─────────┐
+│  Tabs  │   Main Content   │ Sidebar │
+│ 200px  │    (flexible)    │  240px  │
+└────────┴──────────────────┴─────────┘
 ```
 
-Displays tabs horizontally above the content area, similar to WordPress's native tab interface.
+- **Left Column (200px)**: Vertical tab navigation
+- **Middle Column (flexible)**: Main content area with metaboxes
+- **Right Column (240px)**: Customizable sidebar (advertising, links, etc.)
 
-### Left Tabs (Vertical Sidebar)
+### On Mobile
 
-```php
-'tab_position' => 'left'
+On smaller screens (782px or less), everything stacks vertically:
+
+```
+┌─────────────────────────────────────┐
+│              Tabs                   │
+├─────────────────────────────────────┤
+│          Main Content               │
+├─────────────────────────────────────┤
+│            Sidebar                  │
+└─────────────────────────────────────┘
 ```
 
-Displays tabs in a vertical sidebar on the left side, similar to ACF's options page style.
+## Customizing the Header
 
-### Right Tabs (Vertical Sidebar)
+You can add your own logo and change the header template if you'd like:
 
 ```php
-'tab_position' => 'right'
+// Custom logo
+add_filter( 'codesoup_options_header_logo', function( $logo_url, $instance_key ) {
+    if ( 'site_settings' !== $instance_key ) {
+        return $logo_url;
+    }
+    return get_stylesheet_directory_uri() . '/images/logo.png';
+}, 10, 2 );
+
+// Custom header template
+add_filter( 'codesoup_options_header_template', function( $template_path, $instance_key ) {
+    if ( 'site_settings' !== $instance_key ) {
+        return $template_path;
+    }
+    return get_stylesheet_directory() . '/templates/admin-header.php';
+}, 10, 2 );
 ```
 
-Displays tabs in a vertical sidebar on the right side.
+## Customizing the Sidebar
+
+The sidebar on the right (240px wide) can show whatever you want:
+
+```php
+add_filter( 'codesoup_options_sidebar_template', function( $template_path, $instance_key ) {
+    if ( 'site_settings' !== $instance_key ) {
+        return $template_path;
+    }
+
+    // Use the built-in advertising template
+    return WP_PLUGIN_DIR . '/codesoup-options/includes/ui/templates/sidebar-advertising.php';
+
+    // Or use your custom template
+    // return __DIR__ . '/templates/custom-sidebar.php';
+}, 10, 2 );
+```
+
+### Advertising Sidebar
+
+The plugin includes a ready-to-use advertising sidebar template. Customize the ads:
+
+```php
+add_filter( 'codesoup_options_sidebar_ads', function( $ads, $instance_key ) {
+    if ( 'site_settings' !== $instance_key ) {
+        return $ads;
+    }
+
+    return array(
+        // Text widget with links
+        array(
+            'type'  => 'text',
+            'title' => '⭐ Premium Version',
+            'items' => array(
+                array( 'label' => 'Unlock Features', 'link' => 'https://example.com' ),
+                array( 'label' => 'Get Support', 'link' => 'https://example.com/support' ),
+            ),
+        ),
+        // Banner ad
+        array(
+            'type'        => 'banner',
+            'image'       => '/path/to/banner.jpg',
+            'link'        => 'https://example.com',
+            'title'       => 'Special Offer',
+            'description' => 'Limited time discount',
+        ),
+    );
+}, 10, 2 );
+```
 
 ## Features
 
@@ -67,9 +149,10 @@ Displays tabs in a vertical sidebar on the right side.
 
 ### Metabox Support
 
-- Works with native WordPress metaboxes
-- Maintains standard metabox contexts (normal, side, advanced)
-- Supports all metabox features (drag-and-drop, collapse, etc.)
+- **Native metaboxes only**: Tabs mode requires native WordPress metaboxes
+- **Contexts**: Supports normal and advanced contexts (side context not displayed)
+- **Postbox features**: Supports collapse/expand functionality
+- **Single column layout**: Content area uses full width (no side column)
 
 ## Complete Example
 
@@ -81,9 +164,8 @@ $manager = Manager::create(
     array(
         'menu_label'   => 'Site Settings',
         'ui_mode'      => 'tabs',
-        'tab_position' => 'left',
         'integrations' => array(
-            'acf' => array( 'enabled' => false ),
+            'acf' => array( 'enabled' => false ),  // Required for tabs mode
         ),
     )
 );

@@ -8,6 +8,24 @@
 	'use strict';
 
 	$(document).ready(function() {
+		/**
+		 * Mobile Tab Navigation - Select Dropdown
+		 */
+		$('#codesoup-mobile-tab-select').on('change', function() {
+			const selectedTab = $(this).val();
+			const pageSlug = $(this).data('page-slug');
+			const currentUrl = new URL(window.location.href);
+
+			// Update the tab parameter
+			currentUrl.searchParams.set('tab', selectedTab);
+
+			// Navigate to the new URL
+			window.location.href = currentUrl.toString();
+		});
+
+		/**
+		 * Form change tracking
+		 */
 		const $form = $('.codesoup-options-tab-content form');
 		let formChanged = false;
 

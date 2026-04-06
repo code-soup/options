@@ -486,6 +486,38 @@ Manager::create(
 - **`true`**: Errors, warnings, and info messages logged to error_log
 - Debug messages only logged when both `debug` is `true` AND `WP_DEBUG` is enabled
 
+### Disable Styles and Scripts
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'disable_styles'  => true,
+		'disable_scripts' => true,
+	)
+);
+```
+
+Default: `false`
+
+### UI Mode
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'ui_mode' => 'pages',  // or 'tabs'
+	)
+);
+```
+
+- **`'pages'`** (default) - Works with ACF/CMB2, each page is separate
+- **`'tabs'`** - Native metaboxes only, everything on one page
+
+If integrations are enabled, uses pages mode automatically.
+
+See `docs/ui-modes.md` for details.
+
 ## Page Configuration
 
 ```php

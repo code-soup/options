@@ -1,12 +1,138 @@
 /**
- * CodeSoup Options - Tabbed UI Styles
+ * CodeSoup Options - Tabbed UI Styles (Mobile First)
  *
  * @package CodeSoup\Options
  */
 
+/* ========================================
+   MOBILE STYLES (Base)
+   ======================================== */
+.codesoup-options-tabbed-ui #wpcontent {
+	padding: 0;
+}
+
+.codesoup-options-tabbed-ui .wrap {
+	margin: 0 auto;
+}
+
+.codesoup-options-container {
+	margin: 0 auto;
+	padding: 0 24px;
+	max-width: 1440px;
+}
+
 /* Layout Container */
 .codesoup-options-layout {
 	margin-top: 20px;
+}
+
+.codesoup-options-post-edit-tabs {
+	margin-bottom: 20px;
+}
+
+/* Mobile Navigation - Select Dropdown */
+.codesoup-options-mobile-nav {
+	margin-bottom: 16px;
+}
+
+.codesoup-options-mobile-nav select {
+	width: 100%;
+	padding: 10px 12px;
+	font-size: 16px;
+	border: 1px solid #c3c4c7;
+	max-width: 100%;
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+}
+
+/* Hide desktop navigation on mobile */
+.codesoup-options-vertical-tabs,
+.codesoup-options-horizontal-tabs {
+	display: none;
+}
+
+/* Mobile Layout - Block (natural flow) */
+.codesoup-options-tab-content {
+	margin-bottom: 16px;
+	min-width: 0;
+}
+
+/* Postbox Styling */
+.codesoup-options-tab-content .postbox {
+	background: #fff;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	border-radius: 4px;
+	box-shadow: none;
+}
+
+.codesoup-options-tab-content .postbox .inside {
+	padding: 20px;
+	margin: 0;
+}
+
+.codesoup-options-tab-content .postbox .hndle {
+	margin: 0;
+	padding: 12px 24px;
+	font-size: 14px;
+	font-weight: 500;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+	pointer-events: none;
+}
+
+.codesoup-options-tab-content .handle-actions {
+	display: none;
+}
+
+/* Sidebar on Mobile */
+.codesoup-options-banner-sidebar {
+	margin-bottom: 16px;
+}
+
+/* Empty State */
+.codesoup-options-empty-state {
+	background: #fff;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	border-radius: 4px;
+	padding: 40px 20px;
+	text-align: center;
+	margin: 0 auto;
+}
+
+.codesoup-options-empty-state h2 {
+	margin: 0 0 16px 0;
+	font-size: 20px;
+	font-weight: 500;
+	color: #1e1e1e;
+}
+
+.codesoup-options-empty-state p {
+	margin: 0 0 20px 0;
+	color: #646970;
+	font-size: 14px;
+}
+
+.codesoup-options-empty-state p:last-child {
+	margin-bottom: 0;
+}
+
+/* Save Actions */
+.codesoup-save-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: 100;
+	background: #fff;
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
+	box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+	margin-top: 20px;
+	padding: 16px 24px;
+	text-align: right;
+	border-radius: 4px;
+}
+
+.codesoup-save-actions .button {
+	margin: 0;
+	width: 100%;
 }
 
 /* Top Tabs Layout */
@@ -14,140 +140,129 @@
 	margin-bottom: 20px;
 }
 
-/* Left/Right Tabs Layout */
-.codesoup-options-layout-left .codesoup-options-content-wrapper,
-.codesoup-options-layout-right .codesoup-options-content-wrapper {
-	display: flex;
-	gap: 20px;
-	margin-top: 20px;
-}
+/* ========================================
+   TABLET AND UP (min-width: 783px)
+   ======================================== */
 
-/* Vertical Tab Navigation */
-.codesoup-options-vertical-tabs {
-	flex: 0 0 200px;
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
-}
-
-.codesoup-options-vertical-tabs ul {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.codesoup-options-tab-item {
-	margin: 0;
-	border-bottom: 1px solid #c3c4c7;
-}
-
-.codesoup-options-tab-item:last-child {
-	border-bottom: none;
-}
-
-.codesoup-options-tab-item a {
-	display: block;
-	padding: 12px 16px;
-	text-decoration: none;
-	color: #2271b1;
-	transition: background-color 0.2s ease;
-}
-
-.codesoup-options-tab-item a:hover {
-	background-color: #f6f7f7;
-	color: #135e96;
-}
-
-.codesoup-options-tab-item a:focus {
-	box-shadow: inset 0 0 0 1px #2271b1, inset 0 0 0 2px #fff;
-	outline: 2px solid transparent;
-}
-
-.codesoup-options-tab-item.active a {
-	background-color: #2271b1;
-	color: #fff;
-	font-weight: 600;
-}
-
-.codesoup-options-tab-item.active a:hover {
-	background-color: #135e96;
-	color: #fff;
-}
-
-/* Tab Content */
-.codesoup-options-tab-content {
-	flex: 1;
-	min-width: 0;
-}
-
-.codesoup-options-layout-left .codesoup-options-tab-content,
-.codesoup-options-layout-right .codesoup-options-tab-content {
-	background: #fff;
-	padding: 20px;
-	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
-}
-
-/* Right Position - Reverse Order */
-.codesoup-options-layout-right .codesoup-options-content-wrapper {
-	flex-direction: row-reverse;
-}
-
-/* Form Styling */
-.codesoup-options-tab-content form {
-	margin: 0;
-}
-
-.codesoup-options-tab-content .description {
-	margin-top: 0;
-	margin-bottom: 20px;
-	color: #646970;
-}
-
-/* Metabox Container */
-.codesoup-options-tab-content #poststuff {
-	padding-top: 0;
-}
-
-.codesoup-options-tab-content #post-body {
-	margin-top: 0;
-}
-
-.codesoup-options-tab-content #post-body-content {
-	margin-bottom: 20px;
-}
-
-/* Accessibility */
-.codesoup-options-vertical-tabs a:focus-visible {
-	outline: 2px solid #2271b1;
-	outline-offset: -2px;
-}
-
-/* Responsive adjustments */
-@media screen and (max-width: 782px) {
-	.codesoup-options-layout-left .codesoup-options-content-wrapper,
-	.codesoup-options-layout-right .codesoup-options-content-wrapper {
-		flex-direction: column;
+@media (min-width: 783px) {
+	/* Show desktop navigation */
+	.codesoup-options-vertical-tabs {
+		display: block;
 	}
 
+	/* Hide mobile select menu */
+	.codesoup-options-mobile-nav {
+		display: none;
+	}
+
+	/* Flex Layout - 2 columns (no sidebar yet) */
+	.codesoup-options-layout-left .codesoup-options-content-wrapper {
+		display: flex;
+		gap: 20px;
+	}
+
+	/* Vertical Navigation Styles */
 	.codesoup-options-vertical-tabs {
-		flex: 1 1 auto;
-		width: 100%;
+		width: 200px;
+		flex-shrink: 0;
+		padding-top: 2px;
+	}
+
+	.codesoup-options-tab-content {
+		flex: 1;
+		margin-bottom: 0;
+	}
+
+	.codesoup-options-banner-sidebar {
+		margin-bottom: 0;
+		display: none;
 	}
 
 	.codesoup-options-vertical-tabs ul {
-		display: flex;
-		flex-wrap: wrap;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 
 	.codesoup-options-tab-item {
-		flex: 1 1 auto;
-		border-bottom: none;
-		border-right: 1px solid #c3c4c7;
+		margin: 0 0 4px 0;
 	}
 
 	.codesoup-options-tab-item:last-child {
-		border-right: none;
+		margin-bottom: 0;
+	}
+
+	.codesoup-options-tab-item a {
+		display: block;
+		padding: 10px 14px;
+		text-decoration: none;
+		color: #50575e;
+		font-size: 14px;
+		border-radius: 4px;
+		transition: all 0.15s ease;
+		font-weight: 500;
+	}
+
+	.codesoup-options-tab-item a:hover {
+		background-color: #f6f7f7;
+		color: #1e1e1e;
+	}
+
+	.codesoup-options-tab-item a:focus {
+		box-shadow: 0 0 0 2px #26619c;
+		outline: 2px solid transparent;
+		outline-offset: 2px;
+	}
+
+	.codesoup-options-tab-item.active a {
+		background-color: #26619c;
+		color: #fff;
+		font-weight: 500;
+	}
+
+	.codesoup-options-tab-item.active a:hover {
+		background-color: #135e96;
+		color: #fff;
+	}
+
+	/* Better postbox padding on tablet */
+	.codesoup-options-tab-content .postbox .inside {
+		padding: 24px;
+	}
+
+	.codesoup-save-actions .button {
+		width: auto;
+	}
+
+	/* Empty state - tablet */
+	.codesoup-options-empty-state {
+		padding: 60px 40px;
+	}
+
+	.codesoup-options-empty-state h2 {
+		font-size: 24px;
+	}
+
+	.codesoup-options-empty-state p {
+		font-size: 16px;
 	}
 }
 
+/* ========================================
+   DESKTOP (min-width: 1200px)
+   ======================================== */
+
+@media (min-width: 1200px) {
+	/* Flex Layout - 3 columns (with sidebar) */
+	.codesoup-options-layout-left .codesoup-options-content-wrapper {
+		gap: 24px;
+	}
+
+	/* Sidebar visible on desktop */
+	.codesoup-options-banner-sidebar {
+		display: block;
+		width: 300px;
+		flex-shrink: 0;
+		order: 3;
+	}
+}

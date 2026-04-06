@@ -75,12 +75,7 @@ class FormHandler {
 			);
 		}
 
-		if ( ! isset( $_POST['codesoup_options_nonce'] ) ||
-			! wp_verify_nonce(
-				sanitize_text_field( wp_unslash( $_POST['codesoup_options_nonce'] ) ),
-				'codesoup_options_save_' . $post_id
-			)
-		) {
+		if ( ! check_admin_referer( 'update-post_' . $post_id ) ) {
 			wp_die(
 				esc_html__( 'Nonce verification failed.', 'codesoup-options' ),
 				esc_html__( 'Error', 'codesoup-options' ),
@@ -121,4 +116,3 @@ class FormHandler {
 		exit;
 	}
 }
-

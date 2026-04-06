@@ -55,16 +55,18 @@ class Manager {
 	 * Default configuration values
 	 */
 	private const CONFIG_DEFAULTS = array(
-		'menu_position'  => 99,
-		'menu_icon'      => 'dashicons-admin-generic',
-		'menu_label'     => 'Codesoup Options',
-		'revisions'      => false,
-		'parent_menu'    => null,
-		'cache_duration' => HOUR_IN_SECONDS,
-		'debug'          => false,
-		'ui_mode'        => 'pages',
-		'tab_position'   => 'top',
-		'integrations'   => array(
+		'menu_position'   => 99,
+		'menu_icon'       => 'dashicons-admin-generic',
+		'menu_label'      => 'Codesoup Options',
+		'revisions'       => false,
+		'parent_menu'     => null,
+		'cache_duration'  => HOUR_IN_SECONDS,
+		'debug'           => false,
+		'ui_mode'         => 'pages',
+		'tab_position'    => 'top',
+		'disable_styles'  => false,
+		'disable_scripts' => false,
+		'integrations'    => array(
 			'acf' => array(
 				'enabled' => true,
 				'class'   => 'CodeSoup\Options\Integrations\ACF\Init',
@@ -157,11 +159,18 @@ class Manager {
 	private Logger $logger;
 
 	/**
-	 * Admin page handler
+	 * Admin page handler (for tabs mode)
 	 *
 	 * @var AdminPage|null
 	 */
 	private ?AdminPage $admin_page = null;
+
+	/**
+	 * Pages list page handler (for pages mode)
+	 *
+	 * @var PagesListPage|null
+	 */
+	private ?PagesListPage $pages_list_page = null;
 
 	/**
 	 * Form handler
@@ -169,6 +178,13 @@ class Manager {
 	 * @var FormHandler|null
 	 */
 	private ?FormHandler $form_handler = null;
+
+	/**
+	 * Admin header handler
+	 *
+	 * @var AdminHeader|null
+	 */
+	private ?AdminHeader $admin_header = null;
 
 	/**
 	 * Create a new Manager instance
@@ -477,6 +493,12 @@ class Manager {
 
 		$this->validate_config();
 
+		// Force pages mode if any integration is active.
+		// Tabs mode only works reliably with native metaboxes.
+		if ( $this->has_active_integrations() ) {
+			$this->config['ui_mode'] = 'pages';
+		}
+
 		$cache_group  = 'cs_opt_' . $this->config['prefix'];
 		$this->cache  = new Cache( $this->instance_key, $cache_group, $this->config['cache_duration'] );
 		$this->logger = new Logger( $this->instance_key, $this->config['debug'] );
@@ -484,9 +506,36 @@ class Manager {
 		if ( 'tabs' === $this->config['ui_mode'] ) {
 			$this->admin_page   = new AdminPage( $this );
 			$this->form_handler = new FormHandler( $this );
+		} else {
+			$this->pages_list_page = new PagesListPage( $this );
 		}
 
+		$this->admin_header = new AdminHeader( $this );
+
 		$this->load_integrations();
+	}
+
+	/**
+	 * Check if any integrations are active
+	 *
+	 * Tabs mode only works reliably with native metaboxes.
+	 * If any integration (ACF, CMB2, etc.) is enabled, force pages mode.
+	 *
+	 * @return bool
+	 */
+	private function has_active_integrations(): bool {
+		if ( empty( $this->config['integrations'] ) ) {
+			return false;
+		}
+
+		foreach ( $this->config['integrations'] as $integration_config ) {
+			// Check if integration is not explicitly disabled
+			if ( ! isset( $integration_config['enabled'] ) || true === $integration_config['enabled'] ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -623,7 +672,6 @@ class Manager {
 			$valid_positions = array(
 				'top',
 				'left',
-				'right',
 			);
 			if ( ! in_array(
 				$this->config['tab_position'],
@@ -785,8 +833,8 @@ class Manager {
 	 * @return void
 	 */
 	public function register_page( array $args ): void {
-		$page          = new Page( $args );
-		$this->pages[] = $page;
+		$page                     = new Page( $args );
+		$this->pages[ $page->id ] = $page;
 	}
 
 	/**
@@ -878,19 +926,15 @@ class Manager {
 
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'current_screen', array( $this, 'maybe_ensure_pages_exist' ) );
+		add_action( 'admin_init', array( $this, 'redirect_default_post_list' ) );
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 		add_action( 'admin_notices', array( $this, 'show_creation_errors' ) );
 		add_action( 'add_meta_boxes', array( $this, 'register_metaboxes' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'disable_title_edit' ) );
+		add_action( 'admin_head', array( $this, 'remove_help_tabs' ) );
+		add_action( 'admin_head', array( $this, 'remove_screen_options' ) );
 		add_action( 'before_delete_post', array( $this, 'invalidate_cache_on_delete' ) );
 		add_action( 'wp_trash_post', array( $this, 'invalidate_cache_on_delete' ) );
-		add_filter( 'pre_get_posts', array( $this, 'filter_posts_by_capability' ) );
-		add_filter( "views_edit-{$this->config['post_type']}", '__return_empty_array' );
-		add_filter( "bulk_actions-edit-{$this->config['post_type']}", '__return_empty_array' );
-		add_filter( 'months_dropdown_results', array( $this, 'disable_months_dropdown' ), 10, 2 );
-		add_filter( "manage_{$this->config['post_type']}_posts_columns", array( $this, 'customize_columns' ) );
-		add_action( "manage_{$this->config['post_type']}_posts_custom_column", array( $this, 'render_custom_column' ), 10, 2 );
-		add_filter( 'post_row_actions', array( $this, 'remove_row_actions' ), 10, 2 );
 		add_filter( 'parent_file', array( $this, 'set_parent_file' ) );
 		add_filter( 'submenu_file', array( $this, 'set_submenu_file' ) );
 		add_filter( 'wp_insert_post_data', array( $this, 'prevent_title_update' ), 10, 2 );
@@ -902,6 +946,10 @@ class Manager {
 
 		if ( $this->form_handler ) {
 			$this->form_handler->register_hooks();
+		}
+
+		if ( $this->admin_header ) {
+			$this->admin_header->register_hooks();
 		}
 
 		$this->hooks_registered = true;
@@ -919,8 +967,6 @@ class Manager {
 			$supports[] = 'revisions';
 		}
 
-		$show_ui = 'pages' === $this->config['ui_mode'];
-
 		register_post_type(
 			$this->config['post_type'],
 			array(
@@ -930,7 +976,7 @@ class Manager {
 				),
 				'public'              => false,
 				'publicly_queryable'  => false,
-				'show_ui'             => $show_ui,
+				'show_ui'             => true,
 				'show_in_menu'        => false,
 				'query_var'           => false,
 				'rewrite'             => false,
@@ -955,11 +1001,18 @@ class Manager {
 	 * @return void
 	 */
 	public function maybe_ensure_pages_exist( \WP_Screen $screen ): void {
+		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+
 		if ( 'tabs' === $this->config['ui_mode'] ) {
-			if ( isset( $_GET['page'] ) && $_GET['page'] === $this->admin_page->get_page_slug() ) {
+			if ( $page === $this->admin_page->get_page_slug() ) {
 				$this->ensure_pages_exist();
 			}
 		} else {
+			if ( $page === $this->pages_list_page->get_page_slug() ) {
+				$this->ensure_pages_exist();
+				return;
+			}
+
 			if ( $screen->post_type !== $this->config['post_type'] ) {
 				return;
 			}
@@ -1155,76 +1208,7 @@ class Manager {
 		}
 	}
 
-	/**
-	 * Customize columns for post list table
-	 *
-	 * @param array $columns The columns array.
-	 * @return array
-	 */
-	public function customize_columns( array $columns ): array {
-		unset( $columns['cb'] );
-		unset( $columns['date'] );
 
-		$columns['description'] = __( 'Description', 'codesoup-options' );
-
-		return $columns;
-	}
-
-	/**
-	 * Render custom column content
-	 *
-	 * @param string $column_name The column name.
-	 * @param int    $post_id The post ID.
-	 * @return void
-	 */
-	public function render_custom_column( string $column_name, int $post_id ): void {
-		if ( 'description' !== $column_name ) {
-			return;
-		}
-
-		$post = get_post( $post_id );
-		if ( ! $post ) {
-			return;
-		}
-
-		$description = $post->post_excerpt;
-
-		if ( ! empty( $description ) ) {
-			printf(
-				'<p>%s</p>',
-				esc_html( $description )
-			);
-		}
-	}
-
-	/**
-	 * Remove row actions from post list table
-	 *
-	 * @param array    $actions The actions array.
-	 * @param \WP_Post $post The post object.
-	 * @return array
-	 */
-	public function remove_row_actions( array $actions, \WP_Post $post ): array {
-		if ( $post->post_type === $this->config['post_type'] ) {
-			unset( $actions['inline hide-if-no-js'] );
-			unset( $actions['trash'] );
-		}
-		return $actions;
-	}
-
-	/**
-	 * Disable months dropdown filter for our post type
-	 *
-	 * @param object[]    $months    Array of month objects.
-	 * @param string|null $post_type The post type.
-	 * @return object[] Empty array to disable the dropdown.
-	 */
-	public function disable_months_dropdown( array $months, ?string $post_type ): array {
-		if ( $post_type === $this->config['post_type'] ) {
-			return array();
-		}
-		return $months;
-	}
 
 	/**
 	 * Disable title editing for options pages
@@ -1249,6 +1233,94 @@ class Manager {
 			'#post-body-content #title { pointer-events: none; opacity: 0.6; }'
 		);
 	}
+
+	/**
+	 * Remove help tabs from admin screen.
+	 *
+	 * @return void
+	 */
+	public function remove_help_tabs(): void {
+		$screen = get_current_screen();
+
+		if ( ! $screen || $this->get_post_type() !== $screen->post_type ) {
+			return;
+		}
+
+		$screen->remove_help_tabs();
+		$screen->set_help_sidebar( '' );
+	}
+
+	/**
+	 * Remove screen options from admin screen.
+	 *
+	 * @return void
+	 */
+	public function remove_screen_options(): void {
+		$screen = get_current_screen();
+
+		if ( ! $screen || $this->get_post_type() !== $screen->post_type ) {
+			return;
+		}
+
+		add_filter(
+			'screen_options_show_screen',
+			function ( $show, $current_screen ) use ( $screen ) {
+				if ( $current_screen->id === $screen->id ) {
+					return false;
+				}
+				return $show;
+			},
+			10,
+			2
+		);
+	}
+
+	/**
+	 * Render tabs navigation on post edit page
+	 *
+	 * @param \WP_Post $post Post object.
+	 * @return void
+	 */
+	public function render_tabs_navigation( \WP_Post $post ): void {
+		if ( $post->post_type !== $this->get_post_type() ) {
+			return;
+		}
+
+		if ( 'tabs' === $this->config['ui_mode'] && $this->admin_page ) {
+			$this->admin_page->render_tabs_on_edit_page();
+		}
+	}
+
+	/**
+	 * Redirect default post list to custom pages list.
+	 *
+	 * @return void
+	 */
+	public function redirect_default_post_list(): void {
+		global $pagenow;
+
+		if ( 'edit.php' !== $pagenow ) {
+			return;
+		}
+
+		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		if ( $post_type !== $this->config['post_type'] ) {
+			return;
+		}
+
+		if ( 'pages' === $this->config['ui_mode'] && $this->pages_list_page ) {
+			$redirect_url = add_query_arg(
+				'page',
+				$this->pages_list_page->get_page_slug(),
+				admin_url( 'admin.php' )
+			);
+
+			wp_safe_redirect( $redirect_url );
+			exit;
+		}
+	}
+
+
 
 	/**
 	 * Prevent title updates for options pages
@@ -1284,85 +1356,7 @@ class Manager {
 		return $data;
 	}
 
-	/**
-	 * Filter posts list to only show pages user has capability for
-	 *
-	 * Uses meta_query for efficient database-level filtering.
-	 * Sorts posts by post_title in ascending order.
-	 *
-	 * @param \WP_Query $query The WP_Query instance.
-	 * @return void
-	 */
-	public function filter_posts_by_capability( \WP_Query $query ): void {
-		// Only filter on admin list screen for our post type.
-		if ( ! is_admin() || ! $query->is_main_query() ) {
-			return;
-		}
 
-		if ( $query->get( 'post_type' ) !== $this->config['post_type'] ) {
-			return;
-		}
-
-		// Get accessible post IDs for current user (cached).
-		$accessible_ids = $this->get_accessible_post_ids( get_current_user_id() );
-
-		if ( empty( $accessible_ids ) ) {
-			// No accessible posts - show nothing.
-			$query->set( 'post__in', array( 0 ) );
-		} else {
-			$query->set( 'post__in', $accessible_ids );
-		}
-
-		// Sort by post title.
-		$query->set( 'orderby', 'title' );
-		$query->set( 'order', 'ASC' );
-	}
-
-	/**
-	 * Get accessible post IDs for a user based on capabilities
-	 *
-	 * Results are cached for performance.
-	 *
-	 * @param int $user_id User ID.
-	 * @return array Array of post IDs the user can access.
-	 */
-	private function get_accessible_post_ids( int $user_id ): array {
-		$cache_key = 'accessible_posts_' . $user_id;
-		$cached    = wp_cache_get( $cache_key, $this->cache->get_group() );
-
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
-		global $wpdb;
-		$user      = get_userdata( $user_id );
-		$user_caps = array_keys( array_filter( $user->allcaps ) );
-
-		if ( empty( $user_caps ) ) {
-			wp_cache_set( $cache_key, array(), $this->cache->get_group(), HOUR_IN_SECONDS );
-			return array();
-		}
-
-		$placeholders = implode( ',', array_fill( 0, count( $user_caps ), '%s' ) );
-
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$post_ids = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT DISTINCT post_id
-				FROM {$wpdb->postmeta}
-				WHERE meta_key = %s
-				AND meta_value IN ($placeholders)",
-				array_merge( array( self::META_KEY_CAPABILITY ), $user_caps )
-			)
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-		$post_ids = array_map( 'intval', $post_ids );
-
-		wp_cache_set( $cache_key, $post_ids, $this->cache->get_group(), HOUR_IN_SECONDS );
-
-		return $post_ids;
-	}
 
 	/**
 	 * Check if current user can edit a page
@@ -1394,6 +1388,32 @@ class Manager {
 
 
 	/**
+	 * Get menu slug
+	 *
+	 * @return string
+	 */
+	public function get_menu_slug(): string {
+		if ( 'tabs' === $this->config['ui_mode'] ) {
+			return $this->admin_page->get_page_slug();
+		} else {
+			return $this->pages_list_page->get_page_slug();
+		}
+	}
+
+	/**
+	 * Handle menu callback
+	 *
+	 * @return void
+	 */
+	public function handle_menu_redirect(): void {
+		if ( 'tabs' === $this->config['ui_mode'] ) {
+			$this->admin_page->render();
+		} else {
+			$this->pages_list_page->render();
+		}
+	}
+
+	/**
 	 * Register admin menu
 	 *
 	 * @return void
@@ -1415,19 +1435,8 @@ class Manager {
 			return;
 		}
 
-		if ( 'tabs' === $this->config['ui_mode'] ) {
-			$menu_slug     = $this->admin_page->get_page_slug();
-			$menu_callback = array(
-				$this->admin_page,
-				'render',
-			);
-		} else {
-			$menu_slug     = sprintf(
-				'edit.php?post_type=%s',
-				$this->config['post_type']
-			);
-			$menu_callback = '';
-		}
+		$menu_slug     = $this->get_menu_slug();
+		$menu_callback = array( $this, 'handle_menu_redirect' );
 
 		if ( ! empty( $this->config['parent_menu'] ) ) {
 			add_submenu_page(
@@ -1468,7 +1477,7 @@ class Manager {
 			return $this->config['parent_menu'];
 		}
 
-		return $parent_file;
+		return $this->get_menu_slug();
 	}
 
 	/**
@@ -1484,14 +1493,7 @@ class Manager {
 			return $submenu_file;
 		}
 
-		if ( ! empty( $this->config['parent_menu'] ) ) {
-			return sprintf(
-				'edit.php?post_type=%s',
-				$this->config['post_type']
-			);
-		}
-
-		return $submenu_file;
+		return $this->get_menu_slug();
 	}
 
 	/**
@@ -1500,6 +1502,7 @@ class Manager {
 	 * @return void
 	 */
 	public function register_metaboxes(): void {
+		error_log( 'DEBUG register_metaboxes: Called. UI Mode: ' . $this->config['ui_mode'] );
 		if ( 'tabs' === $this->config['ui_mode'] ) {
 			$this->register_metaboxes_tabs_mode();
 		} else {
@@ -1528,7 +1531,7 @@ class Manager {
 			array(
 				'page'     => 'all',
 				'title'    => __( 'Actions', 'codesoup-options' ),
-				'path'     => __DIR__ . '/metabox/actions.php',
+				'path'     => __DIR__ . '/templates/metabox/actions.php',
 				'context'  => 'side',
 				'priority' => 'high',
 				'args'     => array(
@@ -1581,7 +1584,8 @@ class Manager {
 			return;
 		}
 
-		if ( ! isset( $_GET['page'] ) || $_GET['page'] !== $this->admin_page->get_page_slug() ) {
+		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+		if ( $page !== $this->admin_page->get_page_slug() ) {
 			return;
 		}
 
@@ -1596,30 +1600,12 @@ class Manager {
 			'side'
 		);
 
-		$actions_metabox = new Metabox(
-			array(
-				'page'     => 'all',
-				'title'    => __( 'Actions', 'codesoup-options' ),
-				'path'     => __DIR__ . '/metabox/actions.php',
-				'context'  => 'side',
-				'priority' => 'high',
-				'args'     => array(
-					'manager' => $this,
-				),
-			)
-		);
-
-		$actions_metabox->register(
-			sprintf( '%s_actions', $this->instance_key ),
-			$this->config['post_type']
-		);
-
 		if ( empty( $this->metaboxes ) ) {
 			return;
 		}
 
 		foreach ( $this->metaboxes as $metabox ) {
-			if ( $active_tab === $metabox->page ) {
+			if ( $active_tab === $metabox->page || 'all' === $metabox->page ) {
 				$metabox_id = sprintf(
 					'%s_%s',
 					$this->instance_key,
@@ -1892,6 +1878,15 @@ class Manager {
 	}
 
 	/**
+	 * Get post type
+	 *
+	 * @return string
+	 */
+	public function get_post_type(): string {
+		return $this->config['post_type'];
+	}
+
+	/**
 	 * Get cache group
 	 *
 	 * @return string
@@ -1966,5 +1961,14 @@ class Manager {
 	 */
 	public function get_admin_page(): ?AdminPage {
 		return $this->admin_page;
+	}
+
+	/**
+	 * Get pages list page handler
+	 *
+	 * @return PagesListPage|null
+	 */
+	public function get_pages_list_page(): ?PagesListPage {
+		return $this->pages_list_page;
 	}
 }
