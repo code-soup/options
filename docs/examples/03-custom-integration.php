@@ -145,7 +145,9 @@ class CMB2Integration implements IntegrationInterface {
 $manager = Manager::create(
 	'cmb2_settings',
 	array(
-		'menu_label'   => 'Site Settings',
+		'menu'         => array(
+			'label' => 'Site Settings',
+		),
 		'integrations' => array(
 			// Disable ACF.
 			'acf'  => array(

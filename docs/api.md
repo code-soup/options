@@ -118,9 +118,10 @@ Get the manager configuration.
 // Get full config
 $config = $manager->get_config();
 
-// Get specific value
-$post_type = $manager->get_config( 'post_type' );
-$menu_label = $manager->get_config( 'menu_label' );
+// Get specific values via array access
+$config = $manager->get_config();
+$post_type  = $config['post_type'];
+$menu_label = $config['menu']['label'];
 ```
 
 ---
@@ -169,23 +170,31 @@ Destroy the manager instance and clean up resources.
 
 ## Configuration Options
 
+**New in v1.1.0:** Configuration uses nested structure for better organization. See [Migration Guide](migration-v1.1.md) if upgrading from older versions.
+
 ```php
 array(
-	'post_type'       => 'cs_options',               // Custom post type name
-	'prefix'          => 'cs_opt_',                  // Post slug prefix
-	'menu_label'      => 'Options',                  // Admin menu label
-	'menu_icon'       => 'dashicons-admin-generic',  // Dashicon or URL
-	'menu_position'   => 80,                         // Menu position (1-100)
-	'parent_menu'     => null,                       // Parent menu slug for submenu
-	'revisions'       => true,                       // Enable revision history
-	'cache_duration'  => HOUR_IN_SECONDS,            // Cache duration in seconds
-	'debug'           => false,                      // Enable error logging (default: false)
-	'ui_mode'         => 'pages',                    // 'pages' or 'tabs'
-	'tab_position'    => 'top',                      // 'top' or 'left' (tabs mode only)
-	'disable_styles'  => false,                      // Disable plugin styles
-	'disable_scripts' => false,                      // Disable plugin scripts
-	'templates_dir'   => null,                       // Custom templates directory path
-	'integrations'    => array(                      // Integration configuration
+	'post_type'      => 'cs_options',        // Custom post type name
+	'prefix'         => 'cs_opt_',           // Post slug prefix
+	'menu'           => array(
+		'label'    => 'Options',             // Admin menu label
+		'icon'     => 'dashicons-admin-generic', // Dashicon or URL
+		'position' => 80,                    // Menu position (1-100)
+		'parent'   => null,                  // Parent menu slug for submenu
+	),
+	'ui'             => array(
+		'mode'         => 'pages',           // 'pages' or 'tabs'
+		'tab_position' => 'top',             // 'top' or 'left' (tabs mode only)
+		'templates_dir' => null,             // Custom templates directory path
+	),
+	'assets'         => array(
+		'disable_styles'   => false,         // Disable plugin styles
+		'disable_scripts'  => false,         // Disable plugin scripts
+		'disable_branding' => false,         // Disable CodeSoup branding header
+	),
+	'revisions'      => true,                // Enable revision history
+	'debug'          => false,               // Enable error logging (default: false)
+	'integrations'   => array(               // Integration configuration
 		'acf' => array(
 			'enabled' => true,
 			'class'   => 'CodeSoup\\Options\\Integrations\\ACF\\Init',
@@ -199,8 +208,8 @@ array(
 Controls whether the plugin logs errors, warnings, and info messages to the PHP error log.
 
 **Behavior:**
-- **`false`** (default): All logging is disabled. No messages will be written to error_log
-- **`true`**: Logging is enabled. Errors, warnings, and info messages will be written to error_log
+- **`false`** (default): All logging is disabled. No messages will be logged
+- **`true`**: Logging is enabled. Errors, warnings, and info messages will be logged via Logger class
 
 **Examples:**
 
@@ -220,7 +229,7 @@ Manager::create(
 
 ---
 
-### `parent_menu` - Menu Placement
+### `menu.parent` - Menu Placement
 
 Controls where your options pages appear in the WordPress admin menu.
 
@@ -255,8 +264,10 @@ Controls where your options pages appear in the WordPress admin menu.
 Manager::create(
 	'site_settings',
 	array(
-		'menu_label'  => 'Site Settings',
-		'parent_menu' => 'options-general.php',
+		'menu' => array(
+			'label'  => 'Site Settings',
+			'parent' => 'options-general.php',
+		),
 	)
 );
 // Result: Settings → Site Settings
@@ -265,32 +276,36 @@ Manager::create(
 Manager::create(
 	'theme_options',
 	array(
-		'menu_label'  => 'Theme Options',
-		'parent_menu' => 'themes.php',
+		'menu' => array(
+			'label'  => 'Theme Options',
+			'parent' => 'themes.php',
+		),
 	)
 );
 // Result: Appearance → Theme Options
 
-// Top-level menu (no parent_menu)
+// Top-level menu (no parent)
 Manager::create(
 	'main_options',
 	array(
-		'menu_label'    => 'Main Options',
-		'menu_icon'     => 'dashicons-admin-settings',
-		'menu_position' => 50,
+		'menu' => array(
+			'label'    => 'Main Options',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+		),
 	)
 );
 // Result: New top-level menu item in sidebar
 ```
 
 **Notes:**
-- When `parent_menu` is set, `menu_icon` and `menu_position` are ignored
+- When `menu.parent` is set, `menu.icon` and `menu.position` are ignored
 - User must have capability for at least one page to see the menu
 - See `docs/examples/submenu-usage.php` for complete examples
 
 ---
 
-### `ui_mode` - UI Display Mode
+### `ui.mode` - UI Display Mode
 
 Controls how options pages are displayed in WordPress admin.
 
@@ -305,7 +320,9 @@ Controls how options pages are displayed in WordPress admin.
 Manager::create(
 	'site_settings',
 	array(
-		'ui_mode' => 'pages',
+		'ui' => array(
+			'mode' => 'pages',
+		),
 	)
 );
 
@@ -313,8 +330,10 @@ Manager::create(
 Manager::create(
 	'site_settings',
 	array(
-		'ui_mode'      => 'tabs',
-		'tab_position' => 'top',
+		'ui' => array(
+			'mode'         => 'tabs',
+			'tab_position' => 'top',
+		),
 		'integrations' => array(
 			'acf' => array( 'enabled' => false ),  // Must disable for tabs mode
 		),
@@ -329,9 +348,9 @@ Manager::create(
 
 ---
 
-### `tab_position` - Tab Layout
+### `ui.tab_position` - Tab Layout
 
-Controls tab placement in tabs mode. Only used when `ui_mode` is `'tabs'`.
+Controls tab placement in tabs mode. Only used when `ui.mode` is `'tabs'`.
 
 **Values:**
 - `'top'` (default) - Horizontal tabs above content
@@ -344,28 +363,31 @@ Controls tab placement in tabs mode. Only used when `ui_mode` is `'tabs'`.
 Manager::create(
 	'site_settings',
 	array(
-		'ui_mode'      => 'tabs',
-		'tab_position' => 'top',
-	)
+		'ui' => array(
+			'mode'         => 'tabs',
+			'tab_position' => 'top',
+		),
 );
 
 // Vertical tabs
 Manager::create(
 	'site_settings',
 	array(
-		'ui_mode'      => 'tabs',
-		'tab_position' => 'left',
+		'ui' => array(
+			'mode'         => 'tabs',
+			'tab_position' => 'left',
+		),
 	)
 );
 ```
 
 **Notes:**
-- Only applies when `ui_mode` is `'tabs'`
+- Only applies when `ui.mode` is `'tabs'`
 - Ignored in pages mode
 
 ---
 
-### `disable_styles` and `disable_scripts` - Asset Control
+### `assets.disable_styles` and `assets.disable_scripts` - Asset Control
 
 Disable plugin CSS and JavaScript files.
 
@@ -375,8 +397,10 @@ Disable plugin CSS and JavaScript files.
 Manager::create(
 	'site_settings',
 	array(
-		'disable_styles'  => true,  // No CSS
-		'disable_scripts' => true,  // No JavaScript
+		'assets' => array(
+			'disable_styles'  => true,  // No CSS
+			'disable_scripts' => true,  // No JavaScript
+		),
 	)
 );
 ```
@@ -384,6 +408,28 @@ Manager::create(
 **Notes:**
 - Useful when providing custom styling
 - Defaults to `false` (assets enabled)
+
+---
+
+### `disable_branding` - Branding Control
+
+Disable CodeSoup branding header.
+
+**Examples:**
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'disable_branding' => true,
+	)
+);
+```
+
+**Notes:**
+- Removes CodeSoup logo and header from admin pages
+- Defaults to `false` (branding shown)
+- Header can still be customized via `codesoup_options_header_template` filter
 
 ---
 
@@ -439,12 +485,18 @@ your-templates-dir/
 
 ```php
 array(
-	'id'          => 'general',           // Required: Unique page ID
+	'id'          => 'general',           // Required: Unique page ID (sanitized with sanitize_key)
 	'title'       => 'General Settings',  // Required: Page title
 	'capability'  => 'manage_options',    // Required: User capability
 	'description' => 'Site settings',     // Optional: Page description (stored in post_excerpt)
 )
 ```
+
+**Important - Page ID Matching:**
+- Page `id` is sanitized using WordPress `sanitize_key()` function
+- **The exact same ID must be used when registering metaboxes:** `register_metabox(['page' => 'general'])`
+- **Recommended:** Use simple alphanumeric IDs: `'general'`, `'footer'`, `'advanced'`
+- **Avoid:** Special characters, dashes may cause mismatches
 
 **Description Field:**
 - The `description` field is optional and stored in the WordPress `post_excerpt` field
@@ -457,7 +509,7 @@ array(
 
 ```php
 array(
-	'page'     => 'general',                    // Required: Page ID
+	'page'     => 'general',                    // Required: Page ID (must match registered page ID exactly)
 	'title'    => 'Custom Fields',              // Required: Metabox title
 	'path'     => __DIR__ . '/template.php',    // Required: Template file path
 	'context'  => 'normal',                     // Optional: normal, side, advanced
@@ -467,6 +519,12 @@ array(
 	'args'     => array(),                      // Optional: Custom data for template
 )
 ```
+
+**Important - Page ID Must Match:**
+- The `page` value **must exactly match** the page `id` used in `register_page()` or `register_pages()`
+- Both are sanitized with `sanitize_key()` so they must be identical
+- Example: If page ID is `'general'`, use `'page' => 'general'` in metabox
+- **Mismatch = metabox won't display**
 
 **Custom CSS Classes:**
 - The `class` parameter is optional and adds custom CSS classes to the metabox postbox element

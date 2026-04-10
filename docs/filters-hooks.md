@@ -22,7 +22,7 @@ add_filter( 'codesoup_options_header_template', function( $template_path, $insta
 }, 10, 2 );
 ```
 
-Template variables: `$logo_url`, `$menu_label`
+Template variables: `$logo_url`, and access to manager config
 
 ### `codesoup_options_sidebar_template`
 
@@ -34,7 +34,7 @@ add_filter( 'codesoup_options_sidebar_template', function( $template_path, $inst
 }, 10, 2 );
 ```
 
-Template variables: `$this` (AdminPage instance)
+Template variables: `$this` (Admin_Page instance)
 
 ### `codesoup_options_sidebar_ads`
 

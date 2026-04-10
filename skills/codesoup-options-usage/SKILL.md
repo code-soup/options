@@ -146,8 +146,8 @@ add_action( 'save_post', function( $post_id ) {
 	);
 
 	if ( is_wp_error( $result ) ) {
-		error_log( 'Failed to save options: ' . $result->get_error_message() );
-		
+		$manager->get_logger()->error( 'Failed to save options: ' . $result->get_error_message() );
+
 		// Show admin notice
 		add_action( 'admin_notices', function() use ( $result ) {
 			printf(
@@ -190,9 +190,11 @@ Create a new manager instance.
 $manager = Manager::create(
 	'theme_settings',
 	array(
-		'menu_label'    => 'Theme Settings',
-		'menu_icon'     => 'dashicons-admin-appearance',
-		'menu_position' => 60,
+		'menu' => array(
+			'label'    => 'Theme Settings',
+			'icon'     => 'dashicons-admin-appearance',
+			'position' => 60,
+		),
 	)
 );
 ```
@@ -239,7 +241,6 @@ Save options data for native metaboxes. Data is serialized and stored in post_co
 - Nonce verification fails
 - User lacks permission to edit the post
 - Post update fails
-- Cache key exceeds maximum length (172 characters)
 
 **Example:**
 
@@ -253,7 +254,7 @@ $result = $manager->save_options(
 );
 
 if ( is_wp_error( $result ) ) {
-	error_log( 'Save failed: ' . $result->get_error_message() );
+	$manager->get_logger()->error( 'Save failed: ' . $result->get_error_message() );
 }
 ```
 
@@ -398,13 +399,13 @@ Get the manager configuration.
 **Examples:**
 
 ```php
-// Get full config
+// Get full config array
 $config = $manager->get_config();
 
-// Get specific value
-$post_type = $manager->get_config( 'post_type' );
-$menu_label = $manager->get_config( 'menu_label' );
-$debug = $manager->get_config( 'debug' );
+// Access nested config values
+$post_type  = $config['post_type'];
+$menu_label = $config['menu']['label'];
+$debug      = $config['debug'];
 ```
 
 ---
@@ -640,8 +641,8 @@ array(
 
 **Important:**
 - Don't use `update_post_meta()` - Use `Manager::save_options()` instead
-- Data is cached for performance (default: 1 hour)
-- Cache is automatically invalidated on save
+- Data is stored as serialized array in post_content
+- WordPress object cache (if enabled) may cache the data
 
 ## Performance Tips
 
@@ -657,7 +658,7 @@ array(
    $email = $manager->get_option( 'general', 'site_email' );
    ```
 
-2. **Cache manager instances** in your code:
+2. **Reuse manager instances** in your code:
    ```php
    // Good - Get once
    $manager = Manager::get( 'theme_settings' );
@@ -669,23 +670,12 @@ array(
    $menu = Manager::get( 'theme_settings' )->get_option( 'header', 'menu' );
    ```
 
-3. **Adjust cache duration** for your needs:
-   ```php
-   Manager::create(
-   	'theme_settings',
-   	array(
-   		'cache_duration' => DAY_IN_SECONDS, // Cache for 24 hours
-   	)
-   );
-   ```
-
 ## Troubleshooting
 
 **Options returning empty:**
 - Verify manager instance exists: `Manager::get( 'key' )` returns non-null
 - Check page ID matches registered page
 - Verify data was saved (check post_content in database)
-- Clear WordPress object cache
 
 **ACF fields not retrieving:**
 - Verify ACF is installed and active
@@ -696,11 +686,11 @@ array(
 - Check `save_options()` return value for WP_Error
 - Verify nonce is valid
 - Check user has required capability
-- Review error_log for messages (enable debug mode)
+- Review logs via Logger class (enable debug mode in config)
 
 **Performance issues:**
 - Use `get_options()` for bulk retrieval instead of multiple `get_option()` calls
-- Increase cache duration if options don't change frequently
+- Enable WordPress object cache (Redis, Memcached) for better performance
 - Check for excessive Manager::get() calls in loops
 
 

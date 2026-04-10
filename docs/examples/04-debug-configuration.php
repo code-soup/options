@@ -3,7 +3,7 @@
  * Example 4: Debug Configuration
  *
  * This example shows how to control error logging using the debug flag.
- * By default, debug is set to false, which prevents all logging to error_log.
+ * By default, debug is set to false, which prevents all logging via Logger class.
  *
  * @package CodeSoup\Options
  */
@@ -19,8 +19,10 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'production_settings',
 	array(
-		'menu_label' => 'Production Settings',
-		'debug'      => false,
+		'menu' => array(
+			'label' => 'Production Settings',
+		),
+		'debug' => false,
 	)
 );
 
@@ -43,8 +45,10 @@ $manager->init();
 $dev_manager = Manager::create(
 	'dev_settings',
 	array(
-		'menu_label' => 'Dev Settings',
-		'debug'      => true,
+		'menu' => array(
+			'label' => 'Dev Settings',
+		),
+		'debug' => true,
 	)
 );
 
@@ -66,8 +70,10 @@ $dev_manager->init();
 $conditional_manager = Manager::create(
 	'conditional_settings',
 	array(
-		'menu_label' => 'Conditional Settings',
-		'debug'      => defined( 'WP_DEBUG' ) && WP_DEBUG,
+		'menu' => array(
+			'label' => 'Conditional Settings',
+		),
+		'debug' => defined( 'WP_DEBUG' ) && WP_DEBUG,
 	)
 );
 
@@ -104,7 +110,9 @@ $conditional_manager->init();
 $no_acf_manager = Manager::create(
 	'no_acf_settings',
 	array(
-		'menu_label'   => 'No ACF Settings',
+		'menu' => array(
+			'label' => 'No ACF Settings',
+		),
 		'debug'        => false,
 		'integrations' => array(
 			'acf' => array(

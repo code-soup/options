@@ -7,7 +7,7 @@
  * @var string                        $active_tab    Active tab ID.
  * @var array<\CodeSoup\Options\Page> $tab_pages     Registered pages.
  * @var string                        $tab_position  Tab position (top/left).
- * @var \CodeSoup\Options\AdminPage   $this          AdminPage instance.
+ * @var \CodeSoup\Options\Admin_Page   $this          Admin_Page instance.
  */
 
 defined( 'ABSPATH' ) || die;
@@ -22,11 +22,12 @@ $page_slug = $this->get_page_slug();
 
 <div class="wrap <?php echo esc_attr( $layout_class ); ?>">
 	<div class="codesoup-options-container">
-		<h1><?php echo esc_html( $this->manager->get_config( 'menu_label' ) ); ?></h1>
+		<?php $config = $this->manager->get_config(); ?>
+		<h1><?php echo esc_html( $config['menu']['label'] ); ?></h1>
 
 		<?php
 		if ( isset( $_GET['message'] ) && 'updated' === $_GET['message'] ) {
-			\CodeSoup\Options\AdminNotice::success(
+			\CodeSoup\Options\Admin_Notice::success(
 				__( 'Settings saved.', 'codesoup-options' )
 			);
 		}

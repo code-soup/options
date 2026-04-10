@@ -10,13 +10,13 @@ namespace CodeSoup\Options;
 defined( 'ABSPATH' ) || die;
 
 /**
- * AdminNotice class
+ * Admin_Notice class
  *
  * Utility for rendering WordPress admin notices.
  *
  * @since 1.3.0
  */
-class AdminNotice {
+class Admin_Notice {
 
 	/**
 	 * Render admin notice

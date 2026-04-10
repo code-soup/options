@@ -15,9 +15,11 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'acf_settings',
 	array(
-		'menu_label'    => 'Theme Settings',
-		'menu_icon'     => 'dashicons-admin-appearance',
-		'menu_position' => 60,
+		'menu' => array(
+			'label'    => 'Theme Settings',
+			'icon'     => 'dashicons-admin-appearance',
+			'position' => 60,
+		),
 	)
 );
 

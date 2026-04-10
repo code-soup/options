@@ -10,13 +10,13 @@ namespace CodeSoup\Options;
 defined( 'ABSPATH' ) || die;
 
 /**
- * PagesListPage class
+ * Pages_List_Page class
  *
  * Handles custom admin page rendering for pages mode.
  *
  * @since 1.3.0
  */
-class PagesListPage {
+class Pages_List_Page {
 
 	/**
 	 * Manager instance
@@ -35,9 +35,9 @@ class PagesListPage {
 	/**
 	 * List table instance
 	 *
-	 * @var PagesListTable|null
+	 * @var Pages_List_Table|null
 	 */
-	private ?PagesListTable $list_table = null;
+	private ?Pages_List_Table $list_table = null;
 
 	/**
 	 * Constructor
@@ -68,20 +68,21 @@ class PagesListPage {
 	 */
 	public function render(): void {
 		if ( ! $this->list_table ) {
-			$this->list_table = new PagesListTable( $this->manager );
+			$this->list_table = new Pages_List_Table( $this->manager );
 		}
 
 		$this->list_table->prepare_items();
 
 		?>
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php echo esc_html( $this->manager->get_config( 'menu_label' ) ); ?></h1>
+			<?php $config = $this->manager->get_config(); ?>
+			<h1 class="wp-heading-inline"><?php echo esc_html( $config['menu']['label'] ); ?></h1>
 			<hr class="wp-header-end">
 
 			<?php
 			$message = isset( $_GET['message'] ) ? sanitize_key( $_GET['message'] ) : '';
 			if ( 'updated' === $message ) {
-				AdminNotice::success(
+				Admin_Notice::success(
 					__( 'Settings saved.', 'codesoup-options' )
 				);
 			}

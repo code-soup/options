@@ -4,7 +4,7 @@
  *
  * @package CodeSoup\Options
  *
- * @var \CodeSoup\Options\AdminPage $this AdminPage instance.
+ * @var \CodeSoup\Options\Admin_Page $this Admin_Page instance.
  */
 
 defined( 'ABSPATH' ) || die;
@@ -28,7 +28,7 @@ if ( ! file_exists( $sidebar_template ) ) {
 <div class="codesoup-options-banner-sidebar">
 	<?php
 	// Include custom sidebar template
-	// Template has access to $this (AdminPage instance)
+	// Template has access to $this (Admin_Page instance)
 	require $sidebar_template;
 	?>
 </div>

@@ -157,9 +157,12 @@ Run migration script directly via PHP CLI or browser (secure it properly).
 After successful migration:
 
 1. **Remove migration code** - Delete temporary migration scripts
-2. **Clear all caches:**
+2. **Clear WordPress cache (if enabled):**
 ```php
+// Clear WordPress object cache (Redis/Memcached)
 wp_cache_flush();
+
+// Clear transients
 delete_option( '_transient_timeout_*' );
 delete_option( '_transient_*' );
 ```
@@ -295,7 +298,7 @@ array(
 3. **Run once** - Migrations should be one-time operations
 4. **Verify results** - Check data integrity after migration
 5. **Document changes** - Keep a record of what was migrated and when
-6. **Clear caches** - Flush all caches after migration
+6. **Clear WordPress cache** - Flush WordPress object cache if enabled
 7. **Remove migration code** - Delete temporary migration scripts after use
 
 ## Advanced: Custom Migration Logic
@@ -333,9 +336,8 @@ foreach ( $posts as $post ) {
 		)
 	);
 
-	// Clear cache.
-	$manager = Manager::get( 'site_settings' );
-	$manager->invalidate_cache( $post->ID );
+	// Clear WordPress post cache.
+	clean_post_cache( $post->ID );
 }
 ```
 

@@ -137,7 +137,8 @@ class Init implements IntegrationInterface {
 		}
 
 		$instance_key = $this->manager->get_instance_key();
-		$class_name   = Location::create_for_instance( $instance_key, $this->manager->get_config( 'menu_label' ) );
+		$config       = $this->manager->get_config();
+		$class_name   = Location::create_for_instance( $instance_key, $config['menu']['label'] );
 
 		acf_register_location_type( $class_name );
 	}
@@ -232,7 +233,8 @@ class Init implements IntegrationInterface {
 			return;
 		}
 
-		$this->manager->invalidate_cache( $post_id );
+		// Clear WordPress post cache.
+		clean_post_cache( $post_id );
 	}
 
 	/**

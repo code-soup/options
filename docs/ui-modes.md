@@ -10,7 +10,9 @@ Each page is a separate post editor. Works with ACF, CMB2, and other field frame
 $manager = Manager::create(
     'site_settings',
     array(
-        'ui_mode' => 'pages',  // or omit (default)
+        'ui' => array(
+            'mode' => 'pages',  // or omit (default)
+        ),
     )
 );
 ```
@@ -25,8 +27,10 @@ Single page with tabs. Native metaboxes only (no ACF/CMB2).
 $manager = Manager::create(
     'site_settings',
     array(
-        'ui_mode'      => 'tabs',
-        'tab_position' => 'top',               // 'top' or 'left'
+        'ui' => array(
+            'mode'         => 'tabs',
+            'tab_position' => 'top',           // 'top' or 'left'
+        ),
         'integrations' => array(
             'acf' => array( 'enabled' => false ),  // Must disable
         ),

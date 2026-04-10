@@ -16,33 +16,18 @@ defined( 'ABSPATH' ) || die;
  * Manages options pages using custom post types with instance key support.
  * Supports multiple instances with different instance keys.
  *
- * ## Error Handling Strategy
+ * Architecture uses composition with specialized components:
+ * - Post_Manager: Post lifecycle and creation
+ * - Hook_Registry: WordPress hook registration
+ * - Metabox_Registry: Metabox registration and rendering
+ * - Integration_Manager: Third-party integration loading
+ * - Config_Helper: Configuration normalization, validation, and BC layer
  *
- * This class uses a consistent error handling approach:
- *
- * 1. **Constructors and Validation** - Throw exceptions for invalid configuration
- *    - InvalidArgumentException for invalid config values
- *    - Exceptions are translatable for user-facing error messages
- *    - Fail fast to prevent invalid state
- *
- * 2. **Integration Loading** - Log warnings/errors and continue
- *    - Missing integration classes: warning + skip
- *    - Interface violations: error + skip
- *    - Unavailable dependencies: info + skip
- *    - Allows partial functionality when integrations fail
- *
- * 3. **Page Creation** - Log errors and store for display
- *    - Duplicate slugs: error + attempt recovery
- *    - Creation failures: error + store in $creation_errors
- *    - Errors shown via admin_notices
- *    - Non-blocking to allow other pages to be created
- *
- * 4. **Data Operations** - Log errors and return safe defaults
- *    - Cache failures: log + continue without cache
- *    - Database errors: log + return empty/false
- *    - Graceful degradation for better UX
+ * @see https://github.com/code-soup/codesoup-options/blob/main/README.md Documentation
+ * @see https://github.com/code-soup/codesoup-options/blob/main/docs/api.md API Reference
  *
  * @since 1.0.0
+ * @version 1.1.0
  */
 class Manager {
 
@@ -55,19 +40,27 @@ class Manager {
 	 * Default configuration values
 	 */
 	private const CONFIG_DEFAULTS = array(
-		'menu_position'    => 99,
-		'menu_icon'        => 'dashicons-admin-generic',
-		'menu_label'       => 'Codesoup Options',
-		'revisions'        => false,
-		'parent_menu'      => null,
-		'cache_duration'   => HOUR_IN_SECONDS,
-		'debug'            => false,
-		'ui_mode'          => 'pages',
-		'tab_position'     => 'top',
-		'disable_styles'   => false,
-		'disable_scripts'  => false,
-		'templates_dir'    => null,
-		'integrations'     => array(
+		'post_type'      => 'cs_options',
+		'prefix'         => 'cs_opt_',
+		'revisions'      => false,
+		'debug'          => false,
+		'menu'           => array(
+			'label'    => 'Codesoup Options',
+			'icon'     => 'dashicons-admin-generic',
+			'position' => 99,
+			'parent'   => null,
+		),
+		'ui'             => array(
+			'mode'          => 'pages',
+			'tab_position'  => 'top',
+			'templates_dir' => null,
+		),
+		'assets'         => array(
+			'disable_styles'   => false,
+			'disable_scripts'  => false,
+			'disable_branding' => false,
+		),
+		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,
 				'class'   => 'CodeSoup\Options\Integrations\ACF\Init',
@@ -111,13 +104,6 @@ class Manager {
 	private bool $hooks_registered = false;
 
 	/**
-	 * Loaded integrations
-	 *
-	 * @var array
-	 */
-	private array $integrations = array();
-
-	/**
 	 * Page creation errors
 	 *
 	 * @var array
@@ -132,27 +118,6 @@ class Manager {
 	private array $created_pages = array();
 
 	/**
-	 * Registered metaboxes
-	 *
-	 * @var array<Metabox>
-	 */
-	private array $metaboxes = array();
-
-	/**
-	 * Whether metaboxes have been sorted
-	 *
-	 * @var bool
-	 */
-	private bool $metaboxes_sorted = false;
-
-	/**
-	 * Cache handler
-	 *
-	 * @var Cache
-	 */
-	private Cache $cache;
-
-	/**
 	 * Logger instance
 	 *
 	 * @var Logger
@@ -162,30 +127,58 @@ class Manager {
 	/**
 	 * Admin page handler (for tabs mode)
 	 *
-	 * @var AdminPage|null
+	 * @var Admin_Page|null
 	 */
-	private ?AdminPage $admin_page = null;
+	private ?Admin_Page $admin_page = null;
 
 	/**
 	 * Pages list page handler (for pages mode)
 	 *
-	 * @var PagesListPage|null
+	 * @var Pages_List_Page|null
 	 */
-	private ?PagesListPage $pages_list_page = null;
+	private ?Pages_List_Page $pages_list_page = null;
 
 	/**
 	 * Form handler
 	 *
-	 * @var FormHandler|null
+	 * @var Form_Handler|null
 	 */
-	private ?FormHandler $form_handler = null;
+	private ?Form_Handler $form_handler = null;
 
 	/**
 	 * Admin header handler
 	 *
-	 * @var AdminHeader|null
+	 * @var Admin_Header|null
 	 */
-	private ?AdminHeader $admin_header = null;
+	private ?Admin_Header $admin_header = null;
+
+	/**
+	 * Post manager
+	 *
+	 * @var Post_Manager
+	 */
+	private Post_Manager $post_manager;
+
+	/**
+	 * Hook registry
+	 *
+	 * @var Hook_Registry
+	 */
+	private Hook_Registry $hook_registry;
+
+	/**
+	 * Metabox registry
+	 *
+	 * @var Metabox_Registry
+	 */
+	private Metabox_Registry $metabox_registry;
+
+	/**
+	 * Integration manager
+	 *
+	 * @var Integration_Manager
+	 */
+	private Integration_Manager $integration_manager;
 
 	/**
 	 * Create a new Manager instance
@@ -224,19 +217,7 @@ class Manager {
 	 * This method uses direct database updates to avoid triggering save_post hooks,
 	 * preventing infinite loops when called from within save_post callbacks.
 	 *
-	 * Example:
-	 * add_action( 'save_post', function( $post_id ) {
-	 *     $manager = Manager::get( 'site_settings' );
-	 *     if ( isset( $_POST['my_fields'], $_POST['_wpnonce'] ) ) {
-	 *         $manager->save_options(
-	 *             array(
-	 *                 'post_id' => $post_id,
-	 *                 'nonce'   => $_POST['_wpnonce'],
-	 *                 'data'    => $_POST['my_fields'],
-	 *             )
-	 *         );
-	 *     }
-	 * } );
+	 * @see https://github.com/code-soup/codesoup-options/blob/main/docs/native.md Native metabox usage
 	 *
 	 * @param array $args {
 	 *     Arguments for saving options.
@@ -353,8 +334,6 @@ class Manager {
 			// Clear post cache to ensure fresh data on next read.
 			clean_post_cache( $post_id );
 
-			$this->invalidate_cache( $post_id );
-
 			return true;
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
@@ -377,7 +356,7 @@ class Manager {
 	/**
 	 * Destroy a Manager instance
 	 *
-	 * Clears all cached data and removes the instance from memory.
+	 * Removes the instance from memory and clears ACF location registry.
 	 *
 	 * @param string $instance_key Instance identifier.
 	 * @return bool True if instance was destroyed, false if not found.
@@ -388,9 +367,6 @@ class Manager {
 		}
 
 		$instance = self::$instances[ $instance_key ];
-
-		// Clear all cached data for this instance.
-		$instance->cache->clear_all();
 
 		// Clear ACF Location static registry for this instance.
 		if ( isset( $instance->integrations['acf'] ) ) {
@@ -478,7 +454,12 @@ class Manager {
 	 */
 	private function __construct( string $instance_key, array $config ) {
 		$this->instance_key = sanitize_key( $instance_key );
-		$this->config       = array_merge(
+
+		// Apply backward compatibility layer.
+		$config = Config_Helper::normalize( $config, $instance_key );
+
+		// Merge with defaults.
+		$this->config = array_replace_recursive(
 			self::CONFIG_DEFAULTS,
 			array(
 				'post_type' => $this->instance_key . '_options',
@@ -488,347 +469,43 @@ class Manager {
 		);
 
 		// Sanitize config values.
-		$this->config['menu_label'] = sanitize_text_field( $this->config['menu_label'] );
-		$this->config['post_type']  = sanitize_key( $this->config['post_type'] );
-		$this->config['prefix']     = sanitize_key( $this->config['prefix'] );
+		$this->config['menu']['label'] = sanitize_text_field( $this->config['menu']['label'] );
+		$this->config['post_type']     = sanitize_key( $this->config['post_type'] );
+		$this->config['prefix']        = sanitize_key( $this->config['prefix'] );
 
-		$this->validate_config();
+		// Initialize logger (needed for validation).
+		$this->logger = new Logger( $this->instance_key, $this->config['debug'] );
+
+		// Validate configuration.
+		Config_Helper::validate( $this->config, $this->logger );
 
 		// Force pages mode if any integration is active.
 		// Tabs mode only works reliably with native metaboxes.
-		if ( $this->has_active_integrations() ) {
-			$this->config['ui_mode'] = 'pages';
+		if ( Integration_Manager::has_active_integrations( $this->config['integrations'] ) ) {
+			$this->config['ui']['mode'] = 'pages';
 		}
 
-		$cache_group  = 'cs_opt_' . $this->config['prefix'];
-		$this->cache  = new Cache( $this->instance_key, $cache_group, $this->config['cache_duration'] );
-		$this->logger = new Logger( $this->instance_key, $this->config['debug'] );
+		$this->post_manager        = new Post_Manager( $this );
+		$this->hook_registry       = new Hook_Registry( $this );
+		$this->metabox_registry    = new Metabox_Registry( $this );
+		$this->integration_manager = new Integration_Manager( $this );
 
-		if ( 'tabs' === $this->config['ui_mode'] ) {
-			$this->admin_page   = new AdminPage( $this );
-			$this->form_handler = new FormHandler( $this );
+		if ( 'tabs' === $this->config['ui']['mode'] ) {
+			$this->admin_page   = new Admin_Page( $this );
+			$this->form_handler = new Form_Handler( $this );
 		} else {
-			$this->pages_list_page = new PagesListPage( $this );
+			$this->pages_list_page = new Pages_List_Page( $this );
 		}
 
-		$this->admin_header = new AdminHeader( $this );
+		$this->admin_header = new Admin_Header( $this );
 
-		$this->load_integrations();
-	}
-
-	/**
-	 * Check if any integrations are active
-	 *
-	 * Tabs mode only works reliably with native metaboxes.
-	 * If any integration (ACF, CMB2, etc.) is enabled, force pages mode.
-	 *
-	 * @return bool
-	 */
-	private function has_active_integrations(): bool {
-		if ( empty( $this->config['integrations'] ) ) {
-			return false;
-		}
-
-		foreach ( $this->config['integrations'] as $integration_config ) {
-			// Check if integration is not explicitly disabled
-			if ( ! isset( $integration_config['enabled'] ) || true === $integration_config['enabled'] ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Validate configuration options
-	 *
-	 * @return void
-	 * @throws \InvalidArgumentException If validation fails.
-	 */
-	private function validate_config(): void {
-		// Validate required config keys exist.
-		$required_keys = array( 'post_type', 'prefix', 'menu_label' );
-		foreach ( $required_keys as $key ) {
-			if ( empty( $this->config[ $key ] ) ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: %s: configuration key name */
-						esc_html__( 'Config "%s" is required.', 'codesoup-options' ),
-						esc_html( $key )
-					)
-				);
-			}
-		}
-
-		// Validate menu_position is numeric and within range.
-		if ( isset( $this->config['menu_position'] ) ) {
-			if ( ! is_numeric( $this->config['menu_position'] ) ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: %s: type of the value provided */
-						esc_html__( 'Config "menu_position" must be numeric, "%s" given.', 'codesoup-options' ),
-						esc_html( gettype( $this->config['menu_position'] ) )
-					)
-				);
-			}
-
-			$position = (int) $this->config['menu_position'];
-			if ( $position < 1 || $position > 100 ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: %d: position value */
-						esc_html__( 'Config "menu_position" must be between 1 and 100, %d given.', 'codesoup-options' ),
-						esc_html( (string) $position )
-					)
-				);
-			}
-		}
-
-		// Validate cache_duration is positive integer.
-		if ( isset( $this->config['cache_duration'] ) ) {
-			if ( ! is_int( $this->config['cache_duration'] ) || $this->config['cache_duration'] <= 0 ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: %s: type and value of the provided cache_duration */
-						esc_html__( 'Config "cache_duration" must be a positive integer, %s given.', 'codesoup-options' ),
-						esc_html(
-							is_int( $this->config['cache_duration'] )
-								? (string) $this->config['cache_duration']
-								: gettype( $this->config['cache_duration'] )
-						)
-					)
-				);
-			}
-
-			// Warn if cache duration is unreasonably long (more than 1 week).
-			if ( $this->config['cache_duration'] > WEEK_IN_SECONDS ) {
-				$this->logger->warning(
-					sprintf(
-						/* translators: %d: cache duration in seconds */
-						__( 'Cache duration is very long (%d seconds). Consider using a shorter duration.', 'codesoup-options' ),
-						$this->config['cache_duration']
-					)
-				);
-			}
-		}
-
-		// Validate menu_icon starts with dashicons- or is a valid URL/base64.
-		if ( isset( $this->config['menu_icon'] ) ) {
-			$icon = $this->config['menu_icon'];
-			if ( ! empty( $icon ) &&
-				strpos( $icon, 'dashicons-' ) !== 0 &&
-				strpos( $icon, 'data:image' ) !== 0 &&
-				! filter_var( $icon, FILTER_VALIDATE_URL ) ) {
-				throw new \InvalidArgumentException(
-					esc_html__( 'Config "menu_icon" must be a dashicon class, data URI, or valid URL.', 'codesoup-options' )
-				);
-			}
-		}
-
-		// Validate integrations config structure.
-		if ( isset( $this->config['integrations'] ) && ! is_array( $this->config['integrations'] ) ) {
-			throw new \InvalidArgumentException(
-				esc_html__( 'Config "integrations" must be an array.', 'codesoup-options' )
-			);
-		}
-
-		// Validate revisions is boolean.
-		if ( isset( $this->config['revisions'] ) && ! is_bool( $this->config['revisions'] ) ) {
-			throw new \InvalidArgumentException(
-				esc_html__( 'Config "revisions" must be a boolean.', 'codesoup-options' )
-			);
-		}
-
-		// Validate debug is boolean.
-		if ( isset( $this->config['debug'] ) && ! is_bool( $this->config['debug'] ) ) {
-			throw new \InvalidArgumentException(
-				esc_html__( 'Config "debug" must be a boolean.', 'codesoup-options' )
-			);
-		}
-
-		// Validate ui_mode is valid.
-		if ( isset( $this->config['ui_mode'] ) ) {
-			$valid_modes = array(
-				'pages',
-				'tabs',
-			);
-			if ( ! in_array(
-				$this->config['ui_mode'],
-				$valid_modes,
-				true
-			) ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: 1: provided value, 2: comma-separated list of valid values */
-						esc_html__( 'Config "ui_mode" must be one of: %2$s. "%1$s" given.', 'codesoup-options' ),
-						esc_html( $this->config['ui_mode'] ),
-						esc_html( implode( ', ', $valid_modes ) )
-					)
-				);
-			}
-		}
-
-		// Validate tab_position is valid.
-		if ( isset( $this->config['tab_position'] ) ) {
-			$valid_positions = array(
-				'top',
-				'left',
-			);
-			if ( ! in_array(
-				$this->config['tab_position'],
-				$valid_positions,
-				true
-			) ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: 1: provided value, 2: comma-separated list of valid values */
-						esc_html__( 'Config "tab_position" must be one of: %2$s. "%1$s" given.', 'codesoup-options' ),
-						esc_html( $this->config['tab_position'] ),
-						esc_html( implode( ', ', $valid_positions ) )
-					)
-				);
-			}
-		}
-
-		// Validate prefix doesn't use reserved values.
-		$reserved_prefixes = array(
-			'wp_',
-			'wordpress_',
-			'admin_',
-			'post_',
-			'page_',
-			'user_',
-			'option_',
-			'meta_',
-		);
-
-		$prefix = $this->config['prefix'];
-
-		foreach ( $reserved_prefixes as $reserved ) {
-			if ( strpos( $prefix, $reserved ) === 0 ) {
-				$this->logger->warning(
-					sprintf(
-						/* translators: 1: prefix, 2: reserved prefix */
-						__( 'Prefix "%1$s" starts with reserved prefix "%2$s". This may cause conflicts.', 'codesoup-options' ),
-						$prefix,
-						$reserved
-					)
-				);
-			}
-		}
-
-		// Check if prefix is too short (increases collision risk).
-		if ( strlen( $prefix ) < 3 ) {
-			$this->logger->warning(
-				sprintf(
-					/* translators: 1: prefix, 2: character count */
-					__( 'Prefix "%1$s" is very short (%2$d characters). Consider using a longer, more unique prefix.', 'codesoup-options' ),
-					$prefix,
-					strlen( $prefix )
-				)
-			);
-		}
-
-		// Check for existing post types with similar names.
-		$post_types = get_post_types( array(), 'names' );
-		$post_type  = $this->config['post_type'];
-
-		foreach ( $post_types as $existing_type ) {
-			if ( $existing_type !== $post_type && strpos( $existing_type, $prefix ) === 0 ) {
-				$this->logger->warning(
-					sprintf(
-						/* translators: %s: post type name */
-						__( 'Post type "%s" already exists with similar prefix. This may cause confusion.', 'codesoup-options' ),
-						$existing_type
-					)
-				);
-			}
-		}
-	}
-
-	/**
-	 * Load integrations from config
-	 *
-	 * @return void
-	 */
-	private function load_integrations(): void {
-		if ( empty( $this->config['integrations'] ) ) {
-			return;
-		}
-
-		foreach ( $this->config['integrations'] as $key => $config ) {
-			// Skip if disabled.
-			if ( isset( $config['enabled'] ) && ! $config['enabled'] ) {
-				continue;
-			}
-
-			// Get class name.
-			$class = $config['class'] ?? null;
-
-			if ( ! $class || ! is_string( $class ) ) {
-				$this->logger->warning(
-					sprintf(
-						/* translators: %s: integration key */
-						__( 'Integration class name must be a string for key: %s', 'codesoup-options' ),
-						$key
-					)
-				);
-				continue;
-			}
-
-			// Validate class name format (basic check for valid PHP class name).
-			if ( ! preg_match( '/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff\\\\]*$/', $class ) ) {
-				$this->logger->warning(
-					sprintf(
-						/* translators: %s: class name */
-						__( 'Invalid integration class name format: %s', 'codesoup-options' ),
-						$class
-					)
-				);
-				continue;
-			}
-
-			if ( ! class_exists( $class ) ) {
-				$this->logger->warning(
-					sprintf(
-						/* translators: %s: class name */
-						__( 'Integration class not found: %s', 'codesoup-options' ),
-						$class
-					)
-				);
-				continue;
-			}
-
-			// Verify interface implementation.
-			$implements = class_implements( $class );
-			if ( ! $implements || ! in_array( 'CodeSoup\Options\Integrations\IntegrationInterface', $implements, true ) ) {
-				$this->logger->error(
-					sprintf(
-						'Integration must implement IntegrationInterface: %s',
-						$class
-					)
-				);
-				continue;
-			}
-
-			// Check if available.
-			if ( ! $class::is_available() ) {
-				$this->logger->info(
-					sprintf(
-						'Integration dependencies not available: %s',
-						$class::get_name()
-					)
-				);
-				continue;
-			}
-
-			// Instantiate and store.
-			$this->integrations[ $key ] = new $class( $this );
-		}
+		$this->integration_manager->load( $this->config['integrations'] );
 	}
 
 	/**
 	 * Register a new options page
+	 *
+	 * @see https://github.com/code-soup/codesoup-options/blob/main/docs/api.md#page-configuration Page configuration
 	 *
 	 * @param array $args Page arguments.
 	 * @return void
@@ -871,13 +548,36 @@ class Manager {
 	/**
 	 * Register a metabox for a specific page
 	 *
+	 * @see https://github.com/code-soup/codesoup-options/blob/main/docs/api.md#metabox-configuration Metabox configuration
+	 *
 	 * @param array<string,mixed> $args Metabox configuration.
 	 * @return void
+	 * @throws \InvalidArgumentException If page ID doesn't exist.
 	 */
 	public function register_metabox( array $args ): void {
-		$metabox                = new Metabox( $args );
-		$this->metaboxes[]      = $metabox;
-		$this->metaboxes_sorted = false;
+		// Validate page exists
+		if ( isset( $args['page'] ) ) {
+			$page_exists = false;
+			foreach ( $this->pages as $page ) {
+				if ( $page->id === sanitize_key( $args['page'] ) ) {
+					$page_exists = true;
+					break;
+				}
+			}
+
+			if ( ! $page_exists ) {
+				$this->logger->warning(
+					sprintf(
+						'Metabox registered for non-existent page "%s". Available pages: %s',
+						$args['page'],
+						implode( ', ', array_map( fn( $p ) => $p->id, $this->pages ) )
+					)
+				);
+			}
+		}
+
+		$metabox = new Metabox( $args );
+		$this->metabox_registry->register_metabox( $metabox );
 	}
 
 	/**
@@ -886,30 +586,11 @@ class Manager {
 	 * @return void
 	 */
 	public function init(): void {
-		// Sort metaboxes once during initialization.
-		$this->sort_metaboxes();
+		// Register all WordPress hooks.
 		$this->register_hooks();
 	}
 
-	/**
-	 * Sort metaboxes by order property
-	 *
-	 * @return void
-	 */
-	private function sort_metaboxes(): void {
-		if ( empty( $this->metaboxes ) || $this->metaboxes_sorted ) {
-			return;
-		}
 
-		usort(
-			$this->metaboxes,
-			function ( $a, $b ) {
-				return $a->order <=> $b->order;
-			}
-		);
-
-		$this->metaboxes_sorted = true;
-	}
 
 	/**
 	 * Register WordPress hooks
@@ -925,31 +606,24 @@ class Manager {
 			return;
 		}
 
-		add_action( 'init', array( $this, 'register_post_type' ) );
-		add_action( 'current_screen', array( $this, 'maybe_ensure_pages_exist' ) );
-		add_action( 'admin_init', array( $this, 'redirect_default_post_list' ) );
-		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
-		add_action( 'admin_notices', array( $this, 'show_creation_errors' ) );
-		add_action( 'add_meta_boxes', array( $this, 'register_metaboxes' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'disable_title_edit' ) );
-		add_action( 'admin_head', array( $this, 'remove_help_tabs' ) );
-		add_action( 'admin_head', array( $this, 'remove_screen_options' ) );
-		add_action( 'before_delete_post', array( $this, 'invalidate_cache_on_delete' ) );
-		add_action( 'wp_trash_post', array( $this, 'invalidate_cache_on_delete' ) );
-		add_filter( 'parent_file', array( $this, 'set_parent_file' ) );
-		add_filter( 'submenu_file', array( $this, 'set_submenu_file' ) );
-		add_filter( 'wp_insert_post_data', array( $this, 'prevent_title_update' ), 10, 2 );
+		// Register post management hooks.
+		add_action( 'init', array( $this->post_manager, 'register_post_type' ) );
+		add_action( 'current_screen', array( $this->post_manager, 'maybe_ensure_pages_exist' ) );
+
+		// Register metabox hooks.
+		add_action( 'add_meta_boxes', array( $this->metabox_registry, 'register' ) );
+
+		// Register UI hooks via Hook_Registry.
+		$this->hook_registry->register();
 
 		// Register integration hooks.
-		foreach ( $this->integrations as $integration ) {
-			$integration->register_hooks();
-		}
+		$this->integration_manager->register_hooks();
 
 		if ( $this->form_handler ) {
 			$this->form_handler->register_hooks();
 		}
 
-		if ( $this->admin_header ) {
+		if ( $this->admin_header && ! $this->config['assets']['disable_branding'] ) {
 			$this->admin_header->register_hooks();
 		}
 
@@ -957,321 +631,15 @@ class Manager {
 	}
 
 	/**
-	 * Register custom post type
-	 *
-	 * @return void
-	 */
-	public function register_post_type(): void {
-		$supports = array( 'title' );
-
-		if ( $this->config['revisions'] ) {
-			$supports[] = 'revisions';
-		}
-
-		register_post_type(
-			$this->config['post_type'],
-			array(
-				'labels'              => array(
-					'name'          => $this->config['menu_label'],
-					'singular_name' => $this->config['menu_label'],
-				),
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => false,
-				'query_var'           => false,
-				'rewrite'             => false,
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'menu_position'       => $this->config['menu_position'],
-				'supports'            => $supports,
-				'show_in_rest'        => false,
-				'exclude_from_search' => true,
-				'capabilities'        => array(
-					'create_posts' => 'do_not_allow',
-				),
-				'map_meta_cap'        => true,
-			)
-		);
-	}
-
-	/**
-	 * Maybe ensure pages exist
-	 *
-	 * @param \WP_Screen $screen Current screen.
-	 * @return void
-	 */
-	public function maybe_ensure_pages_exist( \WP_Screen $screen ): void {
-		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
-
-		if ( 'tabs' === $this->config['ui_mode'] ) {
-			if ( $page === $this->admin_page->get_page_slug() ) {
-				$this->ensure_pages_exist();
-			}
-		} else {
-			if ( $page === $this->pages_list_page->get_page_slug() ) {
-				$this->ensure_pages_exist();
-				return;
-			}
-
-			if ( $screen->post_type !== $this->config['post_type'] ) {
-				return;
-			}
-
-			if ( ! in_array( $screen->base, array( 'edit', 'post' ), true ) ) {
-				return;
-			}
-
-			$this->ensure_pages_exist();
-		}
-	}
-
-	/**
-	 * Ensure all registered pages exist
-	 *
-	 * Uses batch query to check all pages at once for better performance.
+	 * Ensure pages exist - delegates to Post_Manager
 	 *
 	 * @return void
 	 */
 	private function ensure_pages_exist(): void {
-		if ( empty( $this->pages ) ) {
-			return;
-		}
-
-		// Get all post names we need to check.
-		$post_names = array();
-		$pages_map  = array();
-		foreach ( $this->pages as $page ) {
-			$post_name               = $this->get_post_name( $page->id );
-			$post_names[]            = $post_name;
-			$pages_map[ $post_name ] = $page;
-		}
-
-		// Batch query for existing posts using wpdb.
-		global $wpdb;
-		$placeholders = implode( ',', array_fill( 0, count( $post_names ), '%s' ) );
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$existing_posts = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT ID, post_name
-				FROM {$wpdb->posts}
-				WHERE post_type = %s
-				AND post_name IN ($placeholders)
-				AND post_status = 'publish'",
-				array_merge( array( $this->config['post_type'] ), $post_names )
-			)
-		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		// Index by post_name for quick lookup.
-		$existing_by_name = array();
-		foreach ( $existing_posts as $post ) {
-			$existing_by_name[ $post->post_name ] = (int) $post->ID;
-		}
-
-		// Process each page.
-		foreach ( $this->pages as $page ) {
-			$post_name = $this->get_post_name( $page->id );
-
-			if ( isset( $existing_by_name[ $post_name ] ) ) {
-				$post_id = $existing_by_name[ $post_name ];
-
-				// Update capability if needed.
-				$current_capability = get_post_meta( $post_id, self::META_KEY_CAPABILITY, true );
-				if ( $current_capability !== $page->capability ) {
-					update_post_meta( $post_id, self::META_KEY_CAPABILITY, $page->capability );
-				}
-
-				// Update description if needed.
-				$current_post    = get_post( $post_id );
-				$current_excerpt = $current_post ? $current_post->post_excerpt : '';
-				$desired_excerpt = $page->description ?? '';
-				if ( $current_excerpt !== $desired_excerpt ) {
-					wp_update_post(
-						array(
-							'ID'           => $post_id,
-							'post_excerpt' => $desired_excerpt,
-						)
-					);
-				}
-
-				$this->cache->set_page_id( $page->id, $post_id );
-			} else {
-				// Create new page.
-				$this->create_page( $page );
-			}
-		}
-	}
-
-	/**
-	 * Create a new page post
-	 *
-	 * @param Page $page Page object.
-	 * @return void
-	 */
-	private function create_page( Page $page ): void {
-		$post_name = $this->get_post_name( $page->id );
-		$post_type = $this->config['post_type'];
-
-		// Check for conflicts with other post types.
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$conflict = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT ID, post_type, post_title FROM $wpdb->posts WHERE post_name = %s AND post_type != %s LIMIT 1",
-				$post_name,
-				$post_type
-			)
-		);
-
-		if ( $conflict ) {
-			$error_message = sprintf(
-				/* translators: 1: page title, 2: conflicting post type, 3: slug */
-				__( 'Options page "%1$s" could not be created because a %2$s with the slug "%3$s" already exists. Please use a different prefix in your Manager configuration.', 'codesoup-options' ),
-				$page->title,
-				$conflict->post_type,
-				$post_name
-			);
-			$this->logger->error( $error_message );
-			$this->creation_errors[]          = $error_message;
-			$this->created_pages[ $page->id ] = false;
-			return;
-		}
-
-		// Create the post.
-		$post_id = wp_insert_post(
-			array(
-				'post_title'   => $page->title,
-				'post_name'    => $post_name,
-				'post_type'    => $post_type,
-				'post_status'  => 'publish',
-				'post_content' => '',
-				'post_excerpt' => $page->description ?? '',
-			),
-			true
-		);
-
-		if ( is_wp_error( $post_id ) ) {
-			// Check if it's a duplicate error (race condition).
-			if ( strpos( $post_id->get_error_message(), 'duplicate' ) !== false ) {
-				// Another process created it, fetch and cache.
-				$retry = get_posts(
-					array(
-						'name'          => $post_name,
-						'post_type'     => $post_type,
-						'numberposts'   => 1,
-						'no_found_rows' => true,
-					)
-				);
-				if ( ! empty( $retry ) ) {
-					$this->cache->set_page_id( $page->id, $retry[0]->ID );
-					return;
-				}
-			}
-
-			// Log other errors.
-			$this->logger->error(
-				sprintf(
-					/* translators: 1: page ID, 2: instance key, 3: error message */
-					__( 'Failed to create page "%1$s" for instance "%2$s": %3$s', 'codesoup-options' ),
-					$page->id,
-					$this->instance_key,
-					$post_id->get_error_message()
-				)
-			);
-			$this->created_pages[ $page->id ] = false;
-			return;
-		}
-
-		// Success - set metadata and cache.
-		update_post_meta( $post_id, self::META_KEY_CAPABILITY, $page->capability );
-
-		$this->cache->set_page_id( $page->id, $post_id );
-		$this->created_pages[ $page->id ] = $post_id;
-	}
-
-	/**
-	 * Show admin notices for page creation errors
-	 *
-	 * @return void
-	 */
-	public function show_creation_errors(): void {
-		if ( empty( $this->creation_errors ) ) {
-			return;
-		}
-
-		foreach ( $this->creation_errors as $error ) {
-			AdminNotice::error( $error, false );
-		}
+		$this->post_manager->ensure_pages_exist();
 	}
 
 
-
-	/**
-	 * Disable title editing for options pages
-	 *
-	 * @param string $hook Current admin page hook.
-	 * @return void
-	 */
-	public function disable_title_edit( string $hook ): void {
-		// Only on post.php screen for our post type.
-		if ( 'post.php' !== $hook ) {
-			return;
-		}
-
-		$screen = get_current_screen();
-		if ( ! $screen || $screen->post_type !== $this->config['post_type'] ) {
-			return;
-		}
-
-		// Add inline CSS to make title readonly.
-		wp_add_inline_style(
-			'wp-admin',
-			'#post-body-content #title { pointer-events: none; opacity: 0.6; }'
-		);
-	}
-
-	/**
-	 * Remove help tabs from admin screen.
-	 *
-	 * @return void
-	 */
-	public function remove_help_tabs(): void {
-		$screen = get_current_screen();
-
-		if ( ! $screen || $this->get_post_type() !== $screen->post_type ) {
-			return;
-		}
-
-		$screen->remove_help_tabs();
-		$screen->set_help_sidebar( '' );
-	}
-
-	/**
-	 * Remove screen options from admin screen.
-	 *
-	 * @return void
-	 */
-	public function remove_screen_options(): void {
-		$screen = get_current_screen();
-
-		if ( ! $screen || $this->get_post_type() !== $screen->post_type ) {
-			return;
-		}
-
-		add_filter(
-			'screen_options_show_screen',
-			function ( $show, $current_screen ) use ( $screen ) {
-				if ( $current_screen->id === $screen->id ) {
-					return false;
-				}
-				return $show;
-			},
-			10,
-			2
-		);
-	}
 
 	/**
 	 * Render tabs navigation on post edit page
@@ -1284,75 +652,12 @@ class Manager {
 			return;
 		}
 
-		if ( 'tabs' === $this->config['ui_mode'] && $this->admin_page ) {
+		if ( 'tabs' === $this->config['ui']['mode'] && $this->admin_page ) {
 			$this->admin_page->render_tabs_on_edit_page();
 		}
 	}
 
-	/**
-	 * Redirect default post list to custom pages list.
-	 *
-	 * @return void
-	 */
-	public function redirect_default_post_list(): void {
-		global $pagenow;
 
-		if ( 'edit.php' !== $pagenow ) {
-			return;
-		}
-
-		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		if ( $post_type !== $this->config['post_type'] ) {
-			return;
-		}
-
-		if ( 'pages' === $this->config['ui_mode'] && $this->pages_list_page ) {
-			$redirect_url = add_query_arg(
-				'page',
-				$this->pages_list_page->get_page_slug(),
-				admin_url( 'admin.php' )
-			);
-
-			wp_safe_redirect( $redirect_url );
-			exit;
-		}
-	}
-
-
-
-	/**
-	 * Prevent title updates for options pages
-	 *
-	 * Restores the original title if someone tries to change it via inspector or API.
-	 *
-	 * @param array $data    An array of slashed, sanitized, and processed post data.
-	 * @param array $postarr An array of sanitized (and slashed) but otherwise unmodified post data.
-	 * @return array Modified post data with original title restored.
-	 */
-	public function prevent_title_update( array $data, array $postarr ): array {
-		// Only for our post type.
-		if ( ! isset( $data['post_type'] ) || $data['post_type'] !== $this->config['post_type'] ) {
-			return $data;
-		}
-
-		// Only for updates (not new posts).
-		if ( empty( $postarr['ID'] ) ) {
-			return $data;
-		}
-
-		// Get the original post.
-		$original_post = get_post( $postarr['ID'] );
-		if ( ! $original_post ) {
-			return $data;
-		}
-
-		// Restore original title if it was changed.
-		if ( $data['post_title'] !== $original_post->post_title ) {
-			$data['post_title'] = $original_post->post_title;
-		}
-
-		return $data;
-	}
 
 
 
@@ -1391,226 +696,10 @@ class Manager {
 	 * @return string
 	 */
 	public function get_menu_slug(): string {
-		if ( 'tabs' === $this->config['ui_mode'] ) {
+		if ( 'tabs' === $this->config['ui']['mode'] ) {
 			return $this->admin_page->get_page_slug();
 		} else {
 			return $this->pages_list_page->get_page_slug();
-		}
-	}
-
-	/**
-	 * Handle menu callback
-	 *
-	 * @return void
-	 */
-	public function handle_menu_redirect(): void {
-		if ( 'tabs' === $this->config['ui_mode'] ) {
-			$this->admin_page->render();
-		} else {
-			$this->pages_list_page->render();
-		}
-	}
-
-	/**
-	 * Register admin menu
-	 *
-	 * @return void
-	 */
-	public function register_admin_menu(): void {
-		// Check if user can access at least one page and get the first accessible capability.
-		$has_access     = false;
-		$min_capability = 'manage_options';
-
-		foreach ( $this->pages as $page ) {
-			if ( current_user_can( $page->capability ) ) {
-				$has_access     = true;
-				$min_capability = $page->capability;
-				break;
-			}
-		}
-
-		if ( ! $has_access ) {
-			return;
-		}
-
-		$menu_slug     = $this->get_menu_slug();
-		$menu_callback = array( $this, 'handle_menu_redirect' );
-
-		if ( ! empty( $this->config['parent_menu'] ) ) {
-			add_submenu_page(
-				$this->config['parent_menu'],
-				$this->config['menu_label'],
-				$this->config['menu_label'],
-				$min_capability,
-				$menu_slug,
-				$menu_callback
-			);
-		} else {
-			add_menu_page(
-				$this->config['menu_label'],
-				$this->config['menu_label'],
-				$min_capability,
-				$menu_slug,
-				$menu_callback,
-				$this->config['menu_icon'],
-				$this->config['menu_position']
-			);
-		}
-	}
-
-	/**
-	 * Set parent file for submenu highlighting
-	 *
-	 * @param string $parent_file Parent file.
-	 * @return string
-	 */
-	public function set_parent_file( string $parent_file ): string {
-		global $current_screen;
-
-		if ( ! $current_screen || $current_screen->post_type !== $this->config['post_type'] ) {
-			return $parent_file;
-		}
-
-		if ( ! empty( $this->config['parent_menu'] ) ) {
-			return $this->config['parent_menu'];
-		}
-
-		return $this->get_menu_slug();
-	}
-
-	/**
-	 * Set submenu file for submenu highlighting
-	 *
-	 * @param string|null $submenu_file Submenu file.
-	 * @return string|null
-	 */
-	public function set_submenu_file( ?string $submenu_file ): ?string {
-		global $current_screen;
-
-		if ( ! $current_screen || $current_screen->post_type !== $this->config['post_type'] ) {
-			return $submenu_file;
-		}
-
-		return $this->get_menu_slug();
-	}
-
-	/**
-	 * Register metaboxes for options pages
-	 *
-	 * @return void
-	 */
-	public function register_metaboxes(): void {
-		error_log( 'DEBUG register_metaboxes: Called. UI Mode: ' . $this->config['ui_mode'] );
-		if ( 'tabs' === $this->config['ui_mode'] ) {
-			$this->register_metaboxes_tabs_mode();
-		} else {
-			$this->register_metaboxes_pages_mode();
-		}
-	}
-
-	/**
-	 * Register metaboxes for pages mode
-	 *
-	 * @return void
-	 */
-	private function register_metaboxes_pages_mode(): void {
-		$screen = get_current_screen();
-		if ( ! $screen || $screen->post_type !== $this->config['post_type'] ) {
-			return;
-		}
-
-		remove_meta_box(
-			'submitdiv',
-			$this->config['post_type'],
-			'side'
-		);
-
-		$actions_metabox = new Metabox(
-			array(
-				'page'     => 'all',
-				'title'    => __( 'Actions', 'codesoup-options' ),
-				'path'     => __DIR__ . '/templates/metabox/actions.php',
-				'context'  => 'side',
-				'priority' => 'high',
-				'args'     => array(
-					'manager' => $this,
-				),
-			)
-		);
-
-		$actions_metabox->register(
-			sprintf( '%s_actions', $this->instance_key ),
-			$this->config['post_type']
-		);
-
-		if ( empty( $this->metaboxes ) ) {
-			return;
-		}
-
-		global $post;
-
-		foreach ( $this->metaboxes as $metabox ) {
-			if ( ! $post || ! $post->ID ) {
-				continue;
-			}
-
-			$page_id = $this->extract_page_id_from_post_name( $post->post_name );
-
-			if ( ! $page_id ) {
-				continue;
-			}
-
-			if ( $page_id === $metabox->page ) {
-				$metabox_id = sprintf(
-					'%s_%s',
-					$this->instance_key,
-					$metabox->page
-				);
-				$metabox->register( $metabox_id, $this->config['post_type'] );
-			}
-		}
-	}
-
-	/**
-	 * Register metaboxes for tabs mode
-	 *
-	 * @return void
-	 */
-	private function register_metaboxes_tabs_mode(): void {
-		$screen = get_current_screen();
-		if ( ! $screen ) {
-			return;
-		}
-
-		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
-		if ( $page !== $this->admin_page->get_page_slug() ) {
-			return;
-		}
-
-		$active_tab = $this->admin_page->get_active_tab();
-		if ( ! $active_tab ) {
-			return;
-		}
-
-		remove_meta_box(
-			'submitdiv',
-			$this->config['post_type'],
-			'side'
-		);
-
-		if ( empty( $this->metaboxes ) ) {
-			return;
-		}
-
-		foreach ( $this->metaboxes as $metabox ) {
-			if ( $active_tab === $metabox->page || 'all' === $metabox->page ) {
-				$metabox_id = sprintf(
-					'%s_%s',
-					$this->instance_key,
-					$metabox->page
-				);
-				$metabox->register( $metabox_id, $this->config['post_type'] );
-			}
 		}
 	}
 
@@ -1620,41 +709,26 @@ class Manager {
 	 * Get options by page ID (instance method)
 	 *
 	 * Retrieves options from post_content (serialized array).
-	 * Uses object cache to avoid repeated database queries.
 	 *
 	 * @param string $page_id Page identifier.
 	 * @return array Options array.
 	 */
 	public function get_options( $page_id ): array {
-		$cache_key = $this->cache->get_key( $page_id );
-
-		// Try to get from cache.
-		$cached = $this->cache->get( $cache_key );
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
 		$post = $this->get_post_by_page_id( $page_id );
 
 		if ( ! $post ) {
-			// Cache empty result to avoid repeated lookups.
-			$this->cache->set( $cache_key, array() );
 			return array();
 		}
 
 		$content = $post->post_content;
+
 		if ( empty( $content ) ) {
-			// Cache empty result.
-			$this->cache->set( $cache_key, array() );
 			return array();
 		}
 
 		// Use maybe_unserialize for safety.
 		$options = maybe_unserialize( $content );
 		$options = is_array( $options ) ? $options : array();
-
-		// Cache the result.
-		$this->cache->set( $cache_key, $options );
 
 		return $options;
 	}
@@ -1695,153 +769,38 @@ class Manager {
 	}
 
 	/**
-	 * Get post name from page ID
+	 * Get post name from page ID - delegates to Post_Manager
 	 *
 	 * @param string $page_id Page identifier.
 	 * @return string
 	 */
 	private function get_post_name( string $page_id ): string {
-		return self::normalize_slug( $this->config['prefix'] . $page_id );
+		return $this->post_manager->get_post_name( $page_id );
 	}
 
 	/**
-	 * Extract page ID from post name
+	 * Extract page ID from post name - delegates to Post_Manager
 	 *
 	 * @param string $post_name Post name.
 	 * @return string|null Page ID or null if prefix doesn't match.
 	 */
 	private function extract_page_id_from_post_name( string $post_name ): ?string {
-		$normalized_prefix = self::normalize_slug( $this->config['prefix'] );
-
-		if ( strpos( $post_name, $normalized_prefix ) === 0 ) {
-			return substr( $post_name, strlen( $normalized_prefix ) );
-		}
-
-		return null;
+		return $this->post_manager->extract_page_id_from_post_name( $post_name );
 	}
 
 
 
 	/**
-	 * Get post by page ID
-	 *
-	 * Replaces deprecated get_page_by_path() with a more efficient query.
-	 * Uses multi-layer cache (instance, object cache, transient) to avoid repeated database queries.
+	 * Get post by page ID - delegates to Post_Manager
 	 *
 	 * @param string $page_id Page identifier.
 	 * @return \WP_Post|null Post object or null if not found.
 	 */
 	public function get_post_by_page_id( string $page_id ): ?\WP_Post {
-		// Check instance cache first.
-		$cached_post_id = $this->cache->get_page_id( $page_id );
-		if ( false !== $cached_post_id ) {
-			$post = get_post( $cached_post_id );
-			if ( $post && $this->config['post_type'] === $post->post_type ) {
-				return $post;
-			}
-			// Cache is stale, clear it.
-			$this->cache->clear_page_id( $page_id );
-		}
-
-		// Check object cache and transient layers via Cache::get().
-		$cache_key = $this->cache->get_key( 'post_id_' . $page_id );
-		$post_id   = $this->cache->get( $cache_key );
-
-		if ( false !== $post_id ) {
-			if ( 0 === $post_id ) {
-				return null; // Cached "not found" result.
-			}
-			$post = get_post( $post_id );
-			if ( $post && $this->config['post_type'] === $post->post_type ) {
-				// Update instance cache.
-				$this->cache->set_page_id( $page_id, $post_id );
-				return $post;
-			}
-			// Cache is stale, clear it.
-			$this->cache->delete( $cache_key );
-		}
-
-		// Query database using get_posts (more efficient than get_page_by_path).
-		$post_name = $this->get_post_name( $page_id );
-		$posts     = get_posts(
-			array(
-				'name'        => $post_name,
-				'post_type'   => $this->config['post_type'],
-				'numberposts' => 1,
-				'post_status' => 'publish',
-			)
-		);
-
-		$post = ! empty( $posts ) ? $posts[0] : null;
-
-		// Cache the result in all layers (object cache and transient).
-		$post_id_to_cache = $post ? $post->ID : 0;
-		$this->cache->set( $cache_key, $post_id_to_cache );
-
-		// Update instance cache if found.
-		if ( $post ) {
-			$this->cache->set_page_id( $page_id, $post->ID );
-		}
-
-		return $post;
+		return $this->post_manager->get_post_by_page_id( $page_id );
 	}
 
 
-
-	/**
-	 * Invalidate cache when post is deleted or trashed
-	 *
-	 * @param int $post_id Post ID being deleted/trashed.
-	 * @return void
-	 */
-	public function invalidate_cache_on_delete( int $post_id ): void {
-		$post = get_post( $post_id );
-
-		if ( ! $post || $post->post_type !== $this->config['post_type'] ) {
-			return;
-		}
-
-		$this->invalidate_cache_by_post( $post );
-	}
-
-	/**
-	 * Invalidate cache for a page
-	 *
-	 * @param int $post_id Post ID.
-	 * @return void
-	 */
-	public function invalidate_cache( int $post_id ): void {
-		$post = get_post( $post_id );
-
-		// Early return if post doesn't exist.
-		if ( ! $post ) {
-			return;
-		}
-
-		$this->invalidate_cache_by_post( $post );
-	}
-
-	/**
-	 * Invalidate cache for a page using post object
-	 *
-	 * @param \WP_Post $post Post object.
-	 * @return void
-	 */
-	private function invalidate_cache_by_post( \WP_Post $post ): void {
-		$page_id = $this->extract_page_id_from_post_name( $post->post_name );
-
-		if ( ! $page_id ) {
-			return;
-		}
-
-		// Invalidate options cache.
-		$cache_key = $this->cache->get_key( $page_id );
-		$this->cache->delete( $cache_key );
-
-		// Invalidate post_id cache (used by get_post_by_page_id).
-		$post_id_cache_key = $this->cache->get_key( 'post_id_' . $page_id );
-		$this->cache->delete( $post_id_cache_key );
-	}
 
 	/**
 	 * Get instance key
@@ -1855,6 +814,11 @@ class Manager {
 	/**
 	 * Get config
 	 *
+	 * Supports both new nested array keys and deprecated flat keys (backward compatibility).
+	 *
+	 * @see https://github.com/code-soup/codesoup-options/blob/main/docs/api.md Configuration options
+	 * @see https://github.com/code-soup/codesoup-options/blob/main/docs/migration-v1.1.md Deprecated keys
+	 *
 	 * @param string|null $key Optional config key to retrieve.
 	 * @return mixed Full config array if no key provided, specific value if key provided, null if key not found.
 	 */
@@ -1863,6 +827,22 @@ class Manager {
 			return $this->config;
 		}
 
+		// Check if deprecated key needs translation.
+		$array_path = Config_Helper::translate_key( $key );
+
+		if ( $array_path ) {
+			// Access nested config using array path.
+			$value = $this->config;
+			foreach ( $array_path as $path_key ) {
+				if ( ! isset( $value[ $path_key ] ) ) {
+					return null;
+				}
+				$value = $value[ $path_key ];
+			}
+			return $value;
+		}
+
+		// Direct access for non-deprecated keys.
 		return $this->config[ $key ] ?? null;
 	}
 
@@ -1885,24 +865,6 @@ class Manager {
 	}
 
 	/**
-	 * Get cache group
-	 *
-	 * @return string
-	 */
-	public function get_cache_group(): string {
-		return $this->cache->get_group();
-	}
-
-	/**
-	 * Get cache instance
-	 *
-	 * @return Cache
-	 */
-	public function get_cache(): Cache {
-		return $this->cache;
-	}
-
-	/**
 	 * Get logger instance
 	 *
 	 * @return Logger
@@ -1912,61 +874,49 @@ class Manager {
 	}
 
 	/**
-	 * Get integration instance
+	 * Get integration instance - delegates to Integration_Manager
 	 *
 	 * @param string $key Integration key.
 	 * @return \CodeSoup\Options\Integrations\IntegrationInterface|null Integration instance or null if not found.
 	 */
 	public function get_integration( string $key ) {
-		$integration = $this->integrations[ $key ] ?? null;
-
-		if ( $integration && ! $integration instanceof \CodeSoup\Options\Integrations\IntegrationInterface ) {
-			$this->logger->error(
-				sprintf(
-					'Integration %s does not implement IntegrationInterface',
-					$key
-				)
-			);
-			return null;
-		}
-
-		return $integration;
+		return $this->integration_manager->get( $key );
 	}
 
 	/**
-	 * Check if integration is loaded and active
+	 * Check if integration is loaded - delegates to Integration_Manager
 	 *
 	 * @param string $key Integration key.
 	 * @return bool True if integration is loaded and active.
 	 */
 	public function has_integration( string $key ): bool {
-		return isset( $this->integrations[ $key ] );
+		return $this->integration_manager->has( $key );
 	}
 
 	/**
-	 * Get all loaded integrations
+	 * Get all loaded integrations - delegates to Integration_Manager
 	 *
 	 * @return array<string, object> Array of loaded integration instances.
 	 */
 	public function get_integrations(): array {
-		return $this->integrations;
+		return $this->integration_manager->get_all();
 	}
 
 	/**
 	 * Get admin page handler
 	 *
-	 * @return AdminPage|null
+	 * @return Admin_Page|null
 	 */
-	public function get_admin_page(): ?AdminPage {
+	public function get_admin_page(): ?Admin_Page {
 		return $this->admin_page;
 	}
 
 	/**
 	 * Get pages list page handler
 	 *
-	 * @return PagesListPage|null
+	 * @return Pages_List_Page|null
 	 */
-	public function get_pages_list_page(): ?PagesListPage {
+	public function get_pages_list_page(): ?Pages_List_Page {
 		return $this->pages_list_page;
 	}
 
@@ -1979,12 +929,39 @@ class Manager {
 	 * @return string Full path to template file.
 	 */
 	public function get_template_path( string $relative_path ): string {
-		$custom_dir = $this->config['templates_dir'];
+		$custom_dir = $this->config['ui']['templates_dir'];
 
 		if ( $custom_dir && file_exists( trailingslashit( $custom_dir ) . $relative_path ) ) {
 			return trailingslashit( $custom_dir ) . $relative_path;
 		}
 
 		return dirname( __DIR__ ) . '/includes/templates/' . $relative_path;
+	}
+
+	/**
+	 * Get creation errors
+	 *
+	 * @return array
+	 */
+	public function get_creation_errors(): array {
+		return $this->creation_errors;
+	}
+
+	/**
+	 * Get post manager instance
+	 *
+	 * @return Post_Manager
+	 */
+	public function get_post_manager(): Post_Manager {
+		return $this->post_manager;
+	}
+
+	/**
+	 * Get metabox registry instance
+	 *
+	 * @return Metabox_Registry
+	 */
+	public function get_metabox_registry(): Metabox_Registry {
+		return $this->metabox_registry;
 	}
 }

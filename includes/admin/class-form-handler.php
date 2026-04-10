@@ -10,13 +10,13 @@ namespace CodeSoup\Options;
 defined( 'ABSPATH' ) || die;
 
 /**
- * FormHandler class
+ * Form_Handler class
  *
  * Handles form submissions for tabs mode.
  *
  * @since 1.2.0
  */
-class FormHandler {
+class Form_Handler {
 
 	/**
 	 * Manager instance

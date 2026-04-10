@@ -149,21 +149,8 @@ class Migration {
 						++$results['prefix_changed'];
 						$updated = true;
 
-						// Clear cache with old and new keys.
-						$cache         = $instance->get_cache();
-						$old_cache_key = $cache->get_key( $page_id );
-						$cache->delete( $old_cache_key );
-
-						// Clear new cache key.
-						$new_cache_key = $cache->get_key( $page_id );
-						$cache->delete( $new_cache_key );
-
-						// Clear post_id cache.
-						$post_id_cache_key = $cache->get_key( 'post_id_' . $page_id );
-						$cache->delete( $post_id_cache_key );
-
-						// Clear instance page cache.
-						$cache->clear_page_id( $page_id );
+						// Clear WordPress post cache.
+						clean_post_cache( $post_id );
 					}
 				}
 			}

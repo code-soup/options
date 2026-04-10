@@ -2,16 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.2] - 2026-04-10
+## [1.1.0] - 2026-04-10
+
+### Breaking Changes
+
+- **Configuration structure changed to nested groups** - Old flat structure still supported via backward compatibility layer
+  - `menu_label` → `menu.label`
+  - `menu_icon` → `menu.icon`
+  - `menu_position` → `menu.position`
+  - `parent_menu` → `menu.parent`
+  - `ui_mode` → `ui.mode`
+  - `tab_position` → `ui.tab_position`
+  - `templates_dir` → `ui.templates_dir`
+  - `disable_styles` → `assets.disable_styles`
+  - `disable_scripts` → `assets.disable_scripts`
+  - `disable_branding` → `assets.disable_branding`
 
 ### Added
 
 - Added tabbed UI mode for organizing options pages
-- Added `AdminNotice` utility class for rendering admin notices
+- Added `Admin_Notice` utility class for rendering admin notices
+- Added `disable_branding` config option to remove CodeSoup header
+- Added `templates_dir` config option to override template directory
+- Added `get_template_path()` method to Manager for custom template loading
+- Added backward compatibility layer for old flat configuration structure
 
 ### Changed
 
-- Refactored admin notice rendering to use `AdminNotice` utility
+- Refactored configuration structure into logical groups (menu, ui, assets)
+- Refactored admin notice rendering to use `Admin_Notice` utility
+- Updated all documentation to reflect new nested configuration structure
+
+### Migration
+
+See [docs/migration-v1.1.md](docs/migration-v1.1.md) for upgrade guide. Existing code will continue to work but will show deprecation warnings until migrated.
 
 ## [1.0.1] - 2026-03-01
 

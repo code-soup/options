@@ -6,7 +6,7 @@
  *
  * @package CodeSoup\Options
  *
- * @var \CodeSoup\Options\AdminPage $this AdminPage instance
+ * @var \CodeSoup\Options\Admin_Page $this Admin_Page instance
  */
 
 defined( 'ABSPATH' ) || die;

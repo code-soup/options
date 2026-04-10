@@ -6,7 +6,7 @@
  *
  * @var string                        $active_tab Active tab ID.
  * @var array<\CodeSoup\Options\Page> $tab_pages  Registered pages.
- * @var \CodeSoup\Options\AdminPage   $this       AdminPage instance.
+ * @var \CodeSoup\Options\Admin_Page   $this       Admin_Page instance.
  */
 
 defined( 'ABSPATH' ) || die;

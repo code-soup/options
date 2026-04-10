@@ -8,7 +8,6 @@ includes/
 ├── class-manager.php             # Core manager class
 │
 ├── core/                          # Core functionality
-│   ├── class-cache.php           # Caching system
 │   ├── class-logger.php          # Logging system
 │   ├── class-page.php            # Page entity
 │   └── class-metabox.php         # Metabox entity
@@ -68,9 +67,8 @@ includes/
 The autoloader maps classes to subdirectories:
 
 ```php
-Cache            → includes/core/class-cache.php
-AdminPage        → includes/admin/class-admin-page.php
-AdminNotice      → includes/utilities/class-admin-notice.php
+Admin_Page       → includes/admin/class-admin-page.php
+Admin_Notice     → includes/utilities/class-admin-notice.php
 Migration        → includes/utilities/class-migration.php
 Integrations\ACF → includes/integrations/acf/...
 ```

@@ -67,7 +67,7 @@ add_filter( 'codesoup_options_header_template', function( $template_path, $insta
 }, 10, 2 );
 ```
 
-Variables available in your template: `$logo_url`, `$menu_label`
+Variables available in your template: `$logo_url`, and access to config via `$this->manager->get_config()`
 
 ## Sidebar (Tabs Mode Only)
 
@@ -77,7 +77,7 @@ add_filter( 'codesoup_options_sidebar_template', function( $template_path, $inst
 }, 10, 2 );
 ```
 
-Variables available in your template: `$this` (AdminPage instance)
+Variables available in your template: `$this` (Admin_Page instance)
 
 
 
@@ -89,8 +89,10 @@ Variables available in your template: `$this` (AdminPage instance)
 $manager = Manager::create(
     'my_settings',
     array(
-        'disable_styles'  => true,
-        'disable_scripts' => true,
+        'assets' => array(
+            'disable_styles'  => true,
+            'disable_scripts' => true,
+        ),
     )
 );
 ```

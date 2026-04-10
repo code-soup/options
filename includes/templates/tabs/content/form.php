@@ -24,8 +24,9 @@ defined( 'ABSPATH' ) || die;
 
 	<?php
 	wp_nonce_field( 'update-post_' . $post->ID );
-	do_meta_boxes( $current_post_type, 'normal', $post );
-	do_meta_boxes( $current_post_type, 'advanced', $post );
+	$screen_id = $manager->get_admin_page()->get_screen_id();
+	do_meta_boxes( $screen_id, 'normal', $post );
+	do_meta_boxes( $screen_id, 'advanced', $post );
 	?>
 
 	<!-- Save Button -->

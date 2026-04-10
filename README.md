@@ -1,6 +1,6 @@
 # CodeSoup Options
 
-**Version 1.0.2** - WordPress options manager using custom post types with built-in ACF integration.
+**Version 1.1.0** - WordPress options manager using custom post types with built-in ACF integration.
 
 Manage WordPress options using custom post types instead of the wp_options table. Includes built-in Advanced Custom Fields integration and can be extended to use with any field framework (CMB2, MetaBox.io, Carbon Fields) or native metaboxes.
 
@@ -123,21 +123,37 @@ AI-optimized documentation for agents is available in the `skills/` directory. S
 Manager::create(
 	'instance_key',
 	array(
-		'post_type'       => 'custom_options',
-		'prefix'          => 'custom_',
-		'menu_label'      => 'Settings',
-		'menu_icon'       => 'dashicons-admin-settings',
-		'menu_position'   => 50,
-		'parent_menu'     => null,
-		'revisions'       => true,
-		'cache_duration'  => HOUR_IN_SECONDS,
-		'debug'           => false,
-		'ui_mode'         => 'pages',          // 'pages' or 'tabs' (see docs/tabbed-ui.md)
-		'tab_position'    => 'top',            // 'top' or 'left' (tabs mode only)
-		'disable_styles'  => false,            // Disable plugin styles
-		'disable_scripts' => false,            // Disable plugin scripts
-		'templates_dir'   => null,             // Custom templates directory path
-		'integrations'    => array(
+		// Core settings
+		'post_type'      => 'custom_options',
+		'prefix'         => 'custom_',
+		'revisions'      => true,
+		'cache_duration' => HOUR_IN_SECONDS,
+		'debug'          => false,
+
+		// Menu configuration
+		'menu'           => array(
+			'label'    => 'Settings',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+			'parent'   => null,
+		),
+
+		// UI configuration
+		'ui'             => array(
+			'mode'          => 'pages',  // 'pages' or 'tabs' (see docs/tabbed-ui.md)
+			'tab_position'  => 'top',    // 'top' or 'left' (tabs mode only)
+			'templates_dir' => null,     // Custom templates directory path
+		),
+
+		// Assets configuration
+		'assets'         => array(
+			'disable_styles'  => false,  // Disable plugin styles
+			'disable_scripts' => false,  // Disable plugin scripts
+			'disable_branding' => false, // Disable CodeSoup branding header
+		),
+
+		// Integrations
+		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,
 				'class'   => 'CodeSoup\\Options\\Integrations\\ACF\\Init',
@@ -146,6 +162,8 @@ Manager::create(
 	)
 );
 ```
+
+**Note:** The old flat configuration structure triggers deprecation warnings. See [Migration Guide](docs/migration-v1.1.md) to upgrade.
 
 ## License
 

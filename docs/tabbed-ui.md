@@ -16,7 +16,7 @@ If you'd like to use Tabs mode:
 
 ## Setting Up Tabs Mode
 
-To use tabs mode, set `ui_mode` to `'tabs'` and disable integrations:
+To use tabs mode, set `ui.mode` to `'tabs'` and disable integrations:
 
 ```php
 use CodeSoup\Options\Manager;
@@ -24,9 +24,13 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
     'site_settings',
     array(
-        'menu_label'   => 'Site Settings',
-        'ui_mode'      => 'tabs',          // Enable tabbed UI (requires no integrations)
-        'tab_position' => 'top',           // 'top' or 'left'
+        'menu' => array(
+            'label' => 'Site Settings',
+        ),
+        'ui'   => array(
+            'mode'         => 'tabs',      // Enable tabbed UI (requires no integrations)
+            'tab_position' => 'top',       // 'top' or 'left'
+        ),
         'integrations' => array(
             'acf' => array( 'enabled' => false ),  // Required for tabs mode
         ),
@@ -199,8 +203,12 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
     'site_settings',
     array(
-        'menu_label'   => 'Site Settings',
-        'ui_mode'      => 'tabs',
+        'menu' => array(
+            'label' => 'Site Settings',
+        ),
+        'ui'   => array(
+            'mode' => 'tabs',
+        ),
         'integrations' => array(
             'acf' => array( 'enabled' => false ),  // Required for tabs mode
         ),
@@ -243,10 +251,14 @@ You can switch between `pages` and `tabs` mode at any time without data loss. Bo
 
 ```php
 // Pages mode (default)
-'ui_mode' => 'pages'
+'ui' => array(
+    'mode' => 'pages',
+)
 
 // Tabs mode
-'ui_mode' => 'tabs'
+'ui' => array(
+    'mode' => 'tabs',
+)
 ```
 
 ## Styling

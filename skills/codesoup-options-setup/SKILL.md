@@ -121,7 +121,9 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'site_settings',
 	array(
-		'menu_label'   => 'Site Settings',
+		'menu'         => array(
+			'label' => 'Site Settings',
+		),
 		'integrations' => array(
 			'acf' => array( 'enabled' => false ),
 		),
@@ -225,7 +227,7 @@ add_action( 'save_post', function( $post_id ) {
 	);
 
 	if ( is_wp_error( $result ) ) {
-		error_log( 'Failed to save options: ' . $result->get_error_message() );
+		$manager->get_logger()->error( 'Failed to save options: ' . $result->get_error_message() );
 	}
 } );
 ```
@@ -402,21 +404,36 @@ $manager->init();
 
 ```php
 array(
-	'post_type'       => 'cs_options',               // Custom post type name
-	'prefix'          => 'cs_opt_',                  // Post slug prefix
-	'menu_label'      => 'Options',                  // Admin menu label
-	'menu_icon'       => 'dashicons-admin-generic',  // Dashicon or URL
-	'menu_position'   => 80,                         // Menu position (1-100)
-	'parent_menu'     => null,                       // Parent menu slug for submenu
-	'revisions'       => true,                       // Enable revision history
-	'cache_duration'  => HOUR_IN_SECONDS,            // Cache duration in seconds
-	'debug'           => false,                      // Enable error logging
-	'ui_mode'         => 'pages',                    // 'pages' or 'tabs'
-	'tab_position'    => 'top',                      // 'top' or 'left' (tabs mode only)
-	'disable_styles'  => false,                      // Disable plugin styles
-	'disable_scripts' => false,                      // Disable plugin scripts
-	'templates_dir'   => null,                       // Custom templates directory path
-	'integrations'    => array(                      // Integration configuration
+	// Core settings
+	'post_type'      => 'cs_options',        // Custom post type name
+	'prefix'         => 'cs_opt_',           // Post slug prefix
+	'revisions'      => true,                // Enable revision history
+	'debug'          => false,               // Enable error logging
+
+	// Menu configuration
+	'menu'           => array(
+		'label'    => 'Options',                  // Admin menu label
+		'icon'     => 'dashicons-admin-generic',  // Dashicon or URL
+		'position' => 80,                         // Menu position (1-100)
+		'parent'   => null,                       // Parent menu slug for submenu
+	),
+
+	// UI configuration
+	'ui'             => array(
+		'mode'          => 'pages',               // 'pages' or 'tabs'
+		'tab_position'  => 'top',                 // 'top' or 'left' (tabs mode only)
+		'templates_dir' => null,                  // Custom templates directory path
+	),
+
+	// Assets configuration
+	'assets'         => array(
+		'disable_styles'  => false,               // Disable plugin styles
+		'disable_scripts' => false,               // Disable plugin scripts
+		'disable_branding' => false,              // Disable CodeSoup branding header
+	),
+
+	// Integrations configuration
+	'integrations'   => array(
 		'acf' => array(
 			'enabled' => true,
 			'class'   => 'CodeSoup\\Options\\Integrations\\ACF\\Init',
@@ -424,6 +441,22 @@ array(
 	),
 )
 ```
+
+**Backward Compatibility:**
+
+The old flat configuration structure triggers deprecation warnings but still works:
+
+```php
+array(
+	'menu_label'    => 'Options',     // DEPRECATED - use menu.label
+	'menu_icon'     => 'dashicons-admin-generic',  // DEPRECATED - use menu.icon
+	'ui_mode'       => 'pages',       // DEPRECATED - use ui.mode
+	'disable_styles' => false,        // DEPRECATED - use assets.disable_styles
+	// ...
+)
+```
+
+Please migrate to nested structure to remove warnings. See docs/migration-v1.1.md
 
 ### Menu Placement
 
@@ -433,9 +466,11 @@ array(
 Manager::create(
 	'main_options',
 	array(
-		'menu_label'    => 'Main Options',
-		'menu_icon'     => 'dashicons-admin-settings',
-		'menu_position' => 50,
+		'menu' => array(
+			'label'    => 'Main Options',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+		),
 	)
 );
 ```
@@ -447,8 +482,10 @@ Manager::create(
 Manager::create(
 	'site_settings',
 	array(
-		'menu_label'  => 'Site Settings',
-		'parent_menu' => 'options-general.php',
+		'menu' => array(
+			'label'  => 'Site Settings',
+			'parent' => 'options-general.php',
+		),
 	)
 );
 
@@ -456,8 +493,10 @@ Manager::create(
 Manager::create(
 	'theme_options',
 	array(
-		'menu_label'  => 'Theme Options',
-		'parent_menu' => 'themes.php',
+		'menu' => array(
+			'label'  => 'Theme Options',
+			'parent' => 'themes.php',
+		),
 	)
 );
 ```
@@ -477,7 +516,7 @@ Manager::create(
 ```
 
 **Notes:**
-- When `parent_menu` is set, `menu_icon` and `menu_position` are ignored
+- When `menu.parent` is set, `menu.icon` and `menu.position` are ignored
 - User must have capability for at least one page to see the menu
 
 ### Debug Mode
@@ -494,7 +533,7 @@ Manager::create(
 ```
 
 - **`false`** (default): All logging disabled
-- **`true`**: Errors, warnings, and info messages logged to error_log
+- **`true`**: Errors, warnings, and info messages logged via Logger class
 - Debug messages only logged when both `debug` is `true` AND `WP_DEBUG` is enabled
 
 ### Disable Styles and Scripts
@@ -503,8 +542,10 @@ Manager::create(
 Manager::create(
 	'site_settings',
 	array(
-		'disable_styles'  => true,
-		'disable_scripts' => true,
+		'assets' => array(
+			'disable_styles'  => true,
+			'disable_scripts' => true,
+		),
 	)
 );
 ```
@@ -519,8 +560,10 @@ Controls how options pages are displayed in WordPress admin.
 Manager::create(
 	'site_settings',
 	array(
-		'ui_mode'      => 'tabs',  // 'pages' or 'tabs'
-		'tab_position' => 'top',   // 'top' or 'left' (tabs mode only)
+		'ui' => array(
+			'mode'         => 'tabs',  // 'pages' or 'tabs'
+			'tab_position' => 'top',   // 'top' or 'left' (tabs mode only)
+		),
 	)
 );
 ```
@@ -547,9 +590,13 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'site_settings',
 	array(
-		'menu_label'   => 'Site Settings',
-		'ui_mode'      => 'tabs',
-		'tab_position' => 'left',
+		'menu'         => array(
+			'label' => 'Site Settings',
+		),
+		'ui'           => array(
+			'mode'         => 'tabs',
+			'tab_position' => 'left',
+		),
 		'integrations' => array(
 			'acf' => array( 'enabled' => false ),
 		),
@@ -604,7 +651,6 @@ Available in metabox templates:
 **ACF field groups not showing:**
 - Verify ACF is installed and active
 - Check location rules match your page ID exactly
-- Clear WordPress object cache
 
 **Options not saving:**
 - Check user has required capability
@@ -647,9 +693,11 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'basic_settings',
 	array(
-		'menu_label'    => 'Site Settings',
-		'menu_icon'     => 'dashicons-admin-settings',
-		'integrations'  => array(
+		'menu'         => array(
+			'label' => 'Site Settings',
+			'icon'  => 'dashicons-admin-settings',
+		),
+		'integrations' => array(
 			'acf' => array( 'enabled' => false ),
 		),
 	)
@@ -686,8 +734,10 @@ use CodeSoup\Options\Manager;
 $settings_manager = Manager::create(
 	'site_settings',
 	array(
-		'menu_label'  => 'Site Settings',
-		'parent_menu' => 'options-general.php',
+		'menu' => array(
+			'label'  => 'Site Settings',
+			'parent' => 'options-general.php',
+		),
 	)
 );
 

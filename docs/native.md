@@ -16,7 +16,9 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'site_settings',
 	array(
-		'menu_label'   => 'Site Settings',
+		'menu' => array(
+			'label' => 'Site Settings',
+		),
 		'integrations' => array(
 			'acf' => array( 'enabled' => false ),
 		),
@@ -129,7 +131,7 @@ add_action( 'save_post', function( $post_id ) {
 	);
 
 	if ( is_wp_error( $result ) ) {
-		error_log( 'Failed to save options: ' . $result->get_error_message() );
+		$manager->get_logger()->error( 'Failed to save options: ' . $result->get_error_message() );
 	}
 } );
 ```
@@ -180,7 +182,6 @@ The `save_options()` method returns `WP_Error` on failure. Always check the retu
 - Nonce verification fails
 - User lacks permission to edit the post
 - Post update fails
-- Cache key exceeds maximum length (172 characters)
 
 ### Example with Error Handling and Admin Notices
 
@@ -212,7 +213,7 @@ add_action( 'save_post', function( $post_id ) {
 
 	if ( is_wp_error( $result ) ) {
 		// Log error
-		error_log( 'Options save failed: ' . $result->get_error_message() );
+		$manager->get_logger()->error( 'Options save failed: ' . $result->get_error_message() );
 
 		// Show admin notice
 		add_action( 'admin_notices', function() use ( $result ) {

@@ -15,9 +15,13 @@ add_action(
 		$manager = Manager::create(
 			'site_settings',
 			array(
-				'menu_label'   => 'Site Settings',
-				'ui_mode'      => 'tabs',
-				'tab_position' => 'left',
+				'menu' => array(
+					'label' => 'Site Settings',
+				),
+				'ui'   => array(
+					'mode'         => 'tabs',
+					'tab_position' => 'left',
+				),
 				'integrations' => array(
 					'acf' => array( 'enabled' => false ),
 				),

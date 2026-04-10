@@ -14,13 +14,13 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 }
 
 /**
- * PagesListTable class
+ * Pages_List_Table class
  *
  * Custom list table for options pages.
  *
  * @since 1.3.0
  */
-class PagesListTable extends \WP_List_Table {
+class Pages_List_Table extends \WP_List_Table {
 
 	/**
 	 * Manager instance

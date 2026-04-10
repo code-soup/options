@@ -10,13 +10,13 @@ namespace CodeSoup\Options;
 defined( 'ABSPATH' ) || die;
 
 /**
- * AdminHeader class
+ * Admin_Header class
  *
  * Renders custom branded header for options pages.
  *
  * @since 1.3.0
  */
-class AdminHeader {
+class Admin_Header {
 
 	/**
 	 * Manager instance
@@ -50,16 +50,17 @@ class AdminHeader {
 	 * @return bool
 	 */
 	private function should_render(): bool {
-		$screen = get_current_screen();
+		$screen = Path_Helper::get_current_screen();
 
-		if ( ! $screen ) {
+		if ( null === $screen ) {
 			return false;
 		}
 
-		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+		$page   = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+		$config = $this->manager->get_config();
 
 		// Check for tabs mode
-		if ( 'tabs' === $this->manager->get_config( 'ui_mode' ) ) {
+		if ( 'tabs' === $config['ui']['mode'] ) {
 			$admin_page = $this->manager->get_admin_page();
 			if ( $admin_page && $page === $admin_page->get_page_slug() ) {
 				return true;
@@ -67,7 +68,7 @@ class AdminHeader {
 		}
 
 		// Check for pages mode
-		if ( 'pages' === $this->manager->get_config( 'ui_mode' ) ) {
+		if ( 'pages' === $config['ui']['mode'] ) {
 			$pages_list_page = $this->manager->get_pages_list_page();
 			if ( $pages_list_page && $page === $pages_list_page->get_page_slug() ) {
 				return true;
@@ -103,11 +104,12 @@ class AdminHeader {
 			$this->manager->get_instance_key()
 		);
 
-		$menu_label = $this->manager->get_config( 'menu_label' );
+		$config     = $this->manager->get_config();
+		$menu_label = $config['menu']['label'];
 
 		// Get active page for tabs mode
 		$active_page = null;
-		if ( 'tabs' === $this->manager->get_config( 'ui_mode' ) ) {
+		if ( 'tabs' === $config['ui']['mode'] ) {
 			$admin_page = $this->manager->get_admin_page();
 			if ( $admin_page ) {
 				$active_tab  = $admin_page->get_active_tab();
@@ -141,17 +143,14 @@ class AdminHeader {
 		}
 
 		// Don't enqueue if styles are disabled
-		if ( $this->manager->get_config( 'disable_styles' ) ) {
+		$config = $this->manager->get_config();
+		if ( $config['assets']['disable_styles'] ) {
 			return;
 		}
 
-		// Get base URL (works for both plugin and composer package)
-		$base_path = dirname( dirname( __DIR__ ) );
-		$base_url  = str_replace( ABSPATH, home_url( '/' ), $base_path );
-
 		wp_enqueue_style(
 			'codesoup-options-header',
-			$base_url . '/assets/css/admin-header.css',
+			Path_Helper::get_asset_url( 'css/admin-header.css' ),
 			array(),
 			'1.3.0'
 		);

@@ -82,7 +82,7 @@ class Location extends \ACF_Location {
 				);
 				$choices[ $key ] = sprintf(
 					'%s - %s',
-					$manager->get_config( 'menu_label' ),
+					$manager->get_config()['menu']['label'],
 					$page->title
 				);
 			}

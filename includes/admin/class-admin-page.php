@@ -10,13 +10,13 @@ namespace CodeSoup\Options;
 defined( 'ABSPATH' ) || die;
 
 /**
- * AdminPage class
+ * Admin_Page class
  *
  * Handles custom admin page rendering for tabs mode.
  *
  * @since 1.2.0
  */
-class AdminPage {
+class Admin_Page {
 
 	/**
 	 * Manager instance
@@ -70,10 +70,14 @@ class AdminPage {
 	 * @return string
 	 */
 	public function get_screen_id(): string {
-		return sprintf(
-			'codesoup-options-%s',
-			$this->instance_key
-		);
+		$config = $this->manager->get_config();
+		$page_slug = $this->get_page_slug();
+
+		if ( ! empty( $config['menu']['parent'] ) ) {
+			return $config['menu']['parent'] . '_page_' . $page_slug;
+		}
+
+		return $page_slug;
 	}
 
 	/**
@@ -87,6 +91,21 @@ class AdminPage {
 		}
 
 		return $this->active_tab;
+	}
+
+	/**
+	 * Get active page object
+	 *
+	 * @return \CodeSoup\Options\Page|null
+	 */
+	public function get_active_page(): ?\CodeSoup\Options\Page {
+		$active_tab = $this->get_active_tab();
+		if ( ! $active_tab ) {
+			return null;
+		}
+
+		$pages = $this->manager->get_pages();
+		return $pages[ $active_tab ] ?? null;
 	}
 
 	/**
@@ -185,25 +204,23 @@ class AdminPage {
 			return;
 		}
 
-		// Get base URL (works for both plugin and composer package)
-		$base_path = dirname( dirname( __DIR__ ) );
-		$base_url  = str_replace( ABSPATH, home_url( '/' ), $base_path );
+		$config = $this->manager->get_config();
 
 		// Enqueue styles unless disabled
-		if ( ! $this->manager->get_config( 'disable_styles' ) ) {
+		if ( ! $config['assets']['disable_styles'] ) {
 			wp_enqueue_style(
 				'codesoup-options-tabs',
-				$base_url . '/assets/css/admin-tabs.css',
+				Path_Helper::get_asset_url( 'css/admin-tabs.css' ),
 				array(),
 				'1.2.0'
 			);
 		}
 
 		// Enqueue scripts unless disabled
-		if ( ! $this->manager->get_config( 'disable_scripts' ) ) {
+		if ( ! $config['assets']['disable_scripts'] ) {
 			wp_enqueue_script(
 				'codesoup-options-tabs',
-				$base_url . '/assets/js/admin-tabs.js',
+				Path_Helper::get_asset_url( 'js/admin-tabs.js' ),
 				array( 'jquery' ),
 				'1.2.0',
 				true
