@@ -127,7 +127,6 @@ Manager::create(
 		'post_type'      => 'custom_options',
 		'prefix'         => 'custom_',
 		'revisions'      => true,
-		'cache_duration' => HOUR_IN_SECONDS,
 		'debug'          => false,
 
 		// Menu configuration

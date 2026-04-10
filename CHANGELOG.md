@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-04-10
+
+### Breaking Changes
+
+- **Cache system completely removed** - Plugin no longer implements internal caching
+  - Removed `cache_duration` configuration option
+  - Removed `Cache` class and all caching logic
+  - Removed cache invalidation hooks and methods
+  - Options now read directly from database on each request
+  - WordPress object cache (Redis/Memcached) still works at WordPress level
+
+### Added
+
+- Added `Path_Helper` utility class for centralized path/URL management
+- Added `Security_Helper` utility class for nonce verification patterns
+- Added `get_metabox_registry()` method to Manager class
+- Added validation for metabox page ID matching (warns if page doesn't exist)
+
+### Changed
+
+- Simplified data retrieval - no internal cache layer
+- Updated all documentation to remove cache references
+- Improved error messages for metabox registration
+
+### Removed
+
+- Removed `includes/core/class-cache.php` (260 lines)
+- Removed all cache-related methods from Manager class
+- Removed cache invalidation hooks from Hook_Registry
+- Removed `cache_duration` validation from Config_Helper
+
 ## [1.1.0] - 2026-04-10
 
 ### Breaking Changes
