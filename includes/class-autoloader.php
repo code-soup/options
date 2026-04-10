@@ -104,6 +104,7 @@ class Autoloader {
 			'FormHandler'      => 'admin/FormHandler',
 			'PagesListPage'    => 'admin/PagesListPage',
 			'PagesListTable'   => 'admin/PagesListTable',
+			'AdminNotice'      => 'utilities/AdminNotice',
 			'Migration'        => 'utilities/Migration',
 		);
 
