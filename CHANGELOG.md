@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-04-10
+
+### Added
+
+- Added tabbed UI mode for organizing options pages
+- Added `AdminNotice` utility class for rendering admin notices
+
+### Changed
+
+- Refactored admin notice rendering to use `AdminNotice` utility
+
 ## [1.0.1] - 2026-03-01
 
 ### Fixed

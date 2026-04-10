@@ -10,7 +10,7 @@
 defined( 'ABSPATH' ) || die;
 
 // Default to advertising template
-$default_template = __DIR__ . '/advertising.php';
+$default_template = $this->manager->get_template_path( 'sidebar/advertising.php' );
 
 // Allow custom sidebar template via filter
 $sidebar_template = apply_filters(

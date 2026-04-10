@@ -114,10 +114,15 @@ class Init implements IntegrationInterface {
 	 * @return void
 	 */
 	public function show_acf_missing_notice(): void {
-		printf(
-			'<div class="notice notice-error"><p><strong>%s:</strong> %s</p></div>',
+		$message = sprintf(
+			'<strong>%s:</strong> %s',
 			esc_html__( 'ACF Options Manager', 'codesoup-options' ),
 			esc_html__( 'Advanced Custom Fields plugin is required. Please install and activate ACF.', 'codesoup-options' )
+		);
+
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
 		);
 	}
 

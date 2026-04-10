@@ -119,7 +119,7 @@ class AdminHeader {
 		// Allow custom header template via filter
 		$template_path = apply_filters(
 			'codesoup_options_header_template',
-			dirname( __DIR__ ) . '/templates/header/default.php',
+			$this->manager->get_template_path( 'header/default.php' ),
 			$this->manager->get_instance_key()
 		);
 

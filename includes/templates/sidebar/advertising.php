@@ -11,90 +11,43 @@
 
 defined( 'ABSPATH' ) || die;
 
-// Get ads from filter
-$ads = apply_filters(
-	'codesoup_options_sidebar_ads',
-	array(),
-	$this->manager->get_instance_key()
-);
-
-// Always use demo content for now - customize via filter
+// Default ads.
 $ads = array(
 	array(
-		'type'  => 'text',
-		'title' => '⭐ Premium Version',
-		'items' => array(
+		'type'        => 'text',
+		'title'       => '🚀 CodeSoup Projects',
+		'description' => 'Open source WordPress tools and frameworks',
+		'items'       => array(
 			array(
-				'label' => 'Unlock Advanced Features',
-				'link'  => 'https://codesoup.co',
+				'label'       => 'Pumpkin',
+				'link'        => 'https://github.com/code-soup/pumpkin',
+				'description' => 'WordPress starter theme with ACF PRO integration and component-based development',
 			),
 			array(
-				'label' => 'Priority Support',
-				'link'  => 'https://codesoup.co/support',
+				'label'       => 'Metabox Schema',
+				'link'        => 'https://github.com/code-soup/metabox-schema',
+				'description' => 'Schema-driven form builder. Define fields as arrays, render forms, validate input',
 			),
 			array(
-				'label' => 'Lifetime Updates',
-				'link'  => 'https://codesoup.co',
-			),
-		),
-	),
-	array(
-		'type'  => 'text',
-		'title' => '📚 Resources',
-		'items' => array(
-			array(
-				'label' => 'Documentation',
-				'link'  => 'https://codesoup.co/docs',
+				'label'       => 'WordPress Plugin Boilerplate',
+				'link'        => 'https://github.com/code-soup/wordpress-plugin-boilerplate',
+				'description' => 'Modern plugin boilerplate with PSR-4, Webpack 5, live reload, and code quality tools',
 			),
 			array(
-				'label' => 'Video Tutorials',
-				'link'  => 'https://youtube.com',
+				'label'       => 'ACF Admin Categories',
+				'link'        => 'https://github.com/code-soup/acf-admin-categories',
+				'description' => 'Category organization for ACF field groups',
 			),
 			array(
-				'label' => 'Code Examples',
-				'link'  => 'https://codesoup.co/examples',
-			),
-		),
-	),
-	array(
-		'type'  => 'text',
-		'title' => '💬 Support',
-		'items' => array(
-			array(
-				'label' => 'Community Forum',
-				'link'  => 'https://codesoup.co/forum',
-			),
-			array(
-				'label' => 'Submit a Ticket',
-				'link'  => 'https://codesoup.co/support',
-			),
-			array(
-				'label' => 'Report a Bug',
-				'link'  => 'https://github.com',
-			),
-		),
-	),
-	array(
-		'type'  => 'text',
-		'title' => '🚀 More from CodeSoup',
-		'items' => array(
-			array(
-				'label' => 'All Plugins',
-				'link'  => 'https://codesoup.co/plugins',
-			),
-			array(
-				'label' => 'WordPress Themes',
-				'link'  => 'https://codesoup.co/themes',
-			),
-			array(
-				'label' => 'Custom Development',
-				'link'  => 'https://codesoup.co/hire',
+				'label'       => 'View All Projects',
+				'link'        => 'https://github.com/code-soup',
+				'description' => 'Browse all CodeSoup repositories on GitHub',
 			),
 		),
 	),
 );
 
-// Allow customization via filter (merges with defaults).
+// Allow customization via filter.
 $custom_ads = apply_filters(
 	'codesoup_options_sidebar_ads',
 	array(),
@@ -170,14 +123,23 @@ if ( ! empty( $custom_ads ) ) {
 .codesoup-ad-links a {
 	display: block;
 	font-size: 14px;
+	font-weight: 500;
 	color: #26619c;
 	text-decoration: none;
 	transition: color 0.15s ease;
+	margin-bottom: 4px;
 }
 
 .codesoup-ad-links a:hover {
 	color: #135e96;
 	text-decoration: underline;
+}
+
+.codesoup-ad-item-desc {
+	font-size: 12px;
+	color: #646970;
+	line-height: 1.4;
+	margin: 0 0 8px;
 }
 </style>
 
@@ -210,6 +172,9 @@ if ( ! empty( $custom_ads ) ) {
 							<a href="<?php echo esc_url( $item['link'] ); ?>" target="_blank" rel="noopener noreferrer">
 								<?php echo esc_html( $item['label'] ); ?>
 							</a>
+							<?php if ( ! empty( $item['description'] ) ) : ?>
+								<p class="codesoup-ad-item-desc"><?php echo esc_html( $item['description'] ); ?></p>
+							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>

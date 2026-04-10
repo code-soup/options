@@ -80,12 +80,12 @@ class PagesListPage {
 
 			<?php
 			$message = isset( $_GET['message'] ) ? sanitize_key( $_GET['message'] ) : '';
-			if ( 'updated' === $message ) :
-				?>
-				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Settings saved.', 'codesoup-options' ); ?></p>
-				</div>
-			<?php endif; ?>
+			if ( 'updated' === $message ) {
+				AdminNotice::success(
+					__( 'Settings saved.', 'codesoup-options' )
+				);
+			}
+			?>
 
 			<form method="post">
 				<?php

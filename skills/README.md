@@ -14,7 +14,9 @@ Agent Skills are structured documentation files that AI agents can discover and 
 Set up and configure CodeSoup Options plugin for WordPress. Covers:
 - ACF (Advanced Custom Fields) integration
 - Native metaboxes without frameworks
+- CodeSoup Metabox Schema integration for declarative forms
 - Custom integrations (CMB2, MetaBox.io, Carbon Fields)
+- Tabbed UI configuration (pages vs tabs mode)
 - Menu placement and configuration
 - Post types and capabilities
 

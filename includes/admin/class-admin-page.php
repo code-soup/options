@@ -138,7 +138,7 @@ class AdminPage {
 		$tab_pages    = $this->manager->get_pages();
 		$tab_position = $this->manager->get_config( 'tab_position' );
 
-		require dirname( __DIR__ ) . '/templates/tabs/wrapper.php';
+		require $this->manager->get_template_path( 'tabs/wrapper.php' );
 	}
 
 	/**

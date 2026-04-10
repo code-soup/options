@@ -21,6 +21,7 @@ includes/
 │   └── class-pages-list-table.php # WP_List_Table implementation
 │
 ├── utilities/                     # Utility classes
+│   ├── class-admin-notice.php    # Admin notice renderer
 │   └── class-migration.php       # Migration helper
 │
 ├── integrations/                  # Field framework integrations
@@ -69,6 +70,7 @@ The autoloader maps classes to subdirectories:
 ```php
 Cache            → includes/core/class-cache.php
 AdminPage        → includes/admin/class-admin-page.php
+AdminNotice      → includes/utilities/class-admin-notice.php
 Migration        → includes/utilities/class-migration.php
 Integrations\ACF → includes/integrations/acf/...
 ```

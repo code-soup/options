@@ -1,8 +1,55 @@
 # Customization Guide
 
-You can customize the header, sidebar, and styling.
+You can customize templates using filters or by overriding the entire templates directory.
 
-## Header
+## Method 1: Custom Templates Directory
+
+Override the entire templates directory to use your own template files.
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'templates_dir' => get_stylesheet_directory() . '/codesoup-templates',
+	)
+);
+```
+
+**Template Structure:**
+
+```
+your-templates-dir/
+├── header/
+│   └── default.php
+├── sidebar/
+│   ├── banner-sidebar.php
+│   └── advertising.php
+├── tabs/
+│   ├── wrapper.php
+│   ├── navigation/
+│   │   ├── horizontal.php
+│   │   ├── vertical.php
+│   │   └── mobile.php
+│   └── content/
+│       ├── index.php
+│       ├── form.php
+│       └── empty.php
+└── metabox/
+    └── actions.php
+```
+
+**Notes:**
+- Only create templates you want to customize
+- Plugin falls back to built-in templates for missing files
+- Copy from `includes/templates/` as starting point
+
+---
+
+## Method 2: Filters (Individual Templates)
+
+Override individual templates using filters.
+
+### Header
 
 ### Custom Logo
 

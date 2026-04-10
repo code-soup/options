@@ -55,18 +55,19 @@ class Manager {
 	 * Default configuration values
 	 */
 	private const CONFIG_DEFAULTS = array(
-		'menu_position'   => 99,
-		'menu_icon'       => 'dashicons-admin-generic',
-		'menu_label'      => 'Codesoup Options',
-		'revisions'       => false,
-		'parent_menu'     => null,
-		'cache_duration'  => HOUR_IN_SECONDS,
-		'debug'           => false,
-		'ui_mode'         => 'pages',
-		'tab_position'    => 'top',
-		'disable_styles'  => false,
-		'disable_scripts' => false,
-		'integrations'    => array(
+		'menu_position'    => 99,
+		'menu_icon'        => 'dashicons-admin-generic',
+		'menu_label'       => 'Codesoup Options',
+		'revisions'        => false,
+		'parent_menu'      => null,
+		'cache_duration'   => HOUR_IN_SECONDS,
+		'debug'            => false,
+		'ui_mode'          => 'pages',
+		'tab_position'     => 'top',
+		'disable_styles'   => false,
+		'disable_scripts'  => false,
+		'templates_dir'    => null,
+		'integrations'     => array(
 			'acf' => array(
 				'enabled' => true,
 				'class'   => 'CodeSoup\Options\Integrations\ACF\Init',
@@ -1201,10 +1202,7 @@ class Manager {
 		}
 
 		foreach ( $this->creation_errors as $error ) {
-			printf(
-				'<div class="notice notice-error"><p>%s</p></div>',
-				esc_html( $error )
-			);
+			AdminNotice::error( $error, false );
 		}
 	}
 
@@ -1970,5 +1968,23 @@ class Manager {
 	 */
 	public function get_pages_list_page(): ?PagesListPage {
 		return $this->pages_list_page;
+	}
+
+	/**
+	 * Get template path
+	 *
+	 * Returns path to template file, checking custom templates_dir first if configured.
+	 *
+	 * @param string $relative_path Relative path from templates directory (e.g., 'tabs/wrapper.php').
+	 * @return string Full path to template file.
+	 */
+	public function get_template_path( string $relative_path ): string {
+		$custom_dir = $this->config['templates_dir'];
+
+		if ( $custom_dir && file_exists( trailingslashit( $custom_dir ) . $relative_path ) ) {
+			return trailingslashit( $custom_dir ) . $relative_path;
+		}
+
+		return dirname( __DIR__ ) . '/includes/templates/' . $relative_path;
 	}
 }

@@ -2,6 +2,10 @@
 
 Using CodeSoup Options without any field framework. You create your own HTML fields and handle saving.
 
+**Works well with:**
+- Plain HTML forms
+- [CodeSoup Metabox Schema](https://github.com/code-soup/metabox-schema) for declarative form generation
+
 ## Setup
 
 Disable ACF integration and register your metaboxes:

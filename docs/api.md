@@ -171,16 +171,21 @@ Destroy the manager instance and clean up resources.
 
 ```php
 array(
-	'post_type'      => 'cs_options',               // Custom post type name
-	'prefix'         => 'cs_opt_',                  // Post slug prefix
-	'menu_label'     => 'Options',                  // Admin menu label
-	'menu_icon'      => 'dashicons-admin-generic',  // Dashicon or URL
-	'menu_position'  => 80,                         // Menu position (1-100)
-	'parent_menu'    => null,                       // Parent menu slug for submenu
-	'revisions'      => true,                       // Enable revision history
-	'cache_duration' => HOUR_IN_SECONDS,            // Cache duration in seconds
-	'debug'          => false,                      // Enable error logging (default: false)
-	'integrations'   => array(                      // Integration configuration
+	'post_type'       => 'cs_options',               // Custom post type name
+	'prefix'          => 'cs_opt_',                  // Post slug prefix
+	'menu_label'      => 'Options',                  // Admin menu label
+	'menu_icon'       => 'dashicons-admin-generic',  // Dashicon or URL
+	'menu_position'   => 80,                         // Menu position (1-100)
+	'parent_menu'     => null,                       // Parent menu slug for submenu
+	'revisions'       => true,                       // Enable revision history
+	'cache_duration'  => HOUR_IN_SECONDS,            // Cache duration in seconds
+	'debug'           => false,                      // Enable error logging (default: false)
+	'ui_mode'         => 'pages',                    // 'pages' or 'tabs'
+	'tab_position'    => 'top',                      // 'top' or 'left' (tabs mode only)
+	'disable_styles'  => false,                      // Disable plugin styles
+	'disable_scripts' => false,                      // Disable plugin scripts
+	'templates_dir'   => null,                       // Custom templates directory path
+	'integrations'    => array(                      // Integration configuration
 		'acf' => array(
 			'enabled' => true,
 			'class'   => 'CodeSoup\\Options\\Integrations\\ACF\\Init',
@@ -282,6 +287,151 @@ Manager::create(
 - When `parent_menu` is set, `menu_icon` and `menu_position` are ignored
 - User must have capability for at least one page to see the menu
 - See `docs/examples/submenu-usage.php` for complete examples
+
+---
+
+### `ui_mode` - UI Display Mode
+
+Controls how options pages are displayed in WordPress admin.
+
+**Values:**
+- `'pages'` (default) - Each page is a separate WordPress admin page with list table
+- `'tabs'` - All pages grouped under single admin page with tab navigation
+
+**Examples:**
+
+```php
+// Pages mode (default)
+Manager::create(
+	'site_settings',
+	array(
+		'ui_mode' => 'pages',
+	)
+);
+
+// Tabs mode
+Manager::create(
+	'site_settings',
+	array(
+		'ui_mode'      => 'tabs',
+		'tab_position' => 'top',
+		'integrations' => array(
+			'acf' => array( 'enabled' => false ),  // Must disable for tabs mode
+		),
+	)
+);
+```
+
+**Notes:**
+- Tabs mode requires all integrations to be disabled
+- Tabs mode works with native metaboxes only
+- See `docs/tabbed-ui.md` for complete documentation
+
+---
+
+### `tab_position` - Tab Layout
+
+Controls tab placement in tabs mode. Only used when `ui_mode` is `'tabs'`.
+
+**Values:**
+- `'top'` (default) - Horizontal tabs above content
+- `'left'` - Vertical tabs in left sidebar
+
+**Examples:**
+
+```php
+// Horizontal tabs
+Manager::create(
+	'site_settings',
+	array(
+		'ui_mode'      => 'tabs',
+		'tab_position' => 'top',
+	)
+);
+
+// Vertical tabs
+Manager::create(
+	'site_settings',
+	array(
+		'ui_mode'      => 'tabs',
+		'tab_position' => 'left',
+	)
+);
+```
+
+**Notes:**
+- Only applies when `ui_mode` is `'tabs'`
+- Ignored in pages mode
+
+---
+
+### `disable_styles` and `disable_scripts` - Asset Control
+
+Disable plugin CSS and JavaScript files.
+
+**Examples:**
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'disable_styles'  => true,  // No CSS
+		'disable_scripts' => true,  // No JavaScript
+	)
+);
+```
+
+**Notes:**
+- Useful when providing custom styling
+- Defaults to `false` (assets enabled)
+
+---
+
+### `templates_dir` - Custom Templates Directory
+
+Override default template directory. Plugin will check this directory first before using built-in templates.
+
+**Examples:**
+
+```php
+Manager::create(
+	'site_settings',
+	array(
+		'templates_dir' => get_stylesheet_directory() . '/codesoup-templates',
+	)
+);
+```
+
+**Template Structure:**
+
+Your custom templates directory should mirror the plugin's structure:
+
+```
+your-templates-dir/
+├── header/
+│   └── default.php
+├── sidebar/
+│   ├── banner-sidebar.php
+│   └── advertising.php
+├── tabs/
+│   ├── wrapper.php
+│   ├── navigation/
+│   │   ├── horizontal.php
+│   │   ├── vertical.php
+│   │   └── mobile.php
+│   └── content/
+│       ├── index.php
+│       ├── form.php
+│       └── empty.php
+└── metabox/
+    └── actions.php
+```
+
+**Notes:**
+- Only override templates you need to customize
+- Plugin falls back to built-in templates for missing files
+- Templates have access to same variables as built-in templates
+- See `docs/customization.md` for template variables reference
 
 ---
 

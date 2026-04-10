@@ -12,6 +12,7 @@ Tabs mode works with native WordPress metaboxes. If you're using a field framewo
 If you'd like to use Tabs mode:
 1. Disable all field framework integrations in your config
 2. Use native WordPress metaboxes (register them with `register_metabox()`)
+3. Works great with [CodeSoup Metabox Schema](https://github.com/code-soup/metabox-schema) for declarative form generation
 
 ## Setting Up Tabs Mode
 
@@ -24,7 +25,8 @@ $manager = Manager::create(
     'site_settings',
     array(
         'menu_label'   => 'Site Settings',
-        'ui_mode'      => 'tabs',        // Enable tabbed UI (requires no integrations)
+        'ui_mode'      => 'tabs',          // Enable tabbed UI (requires no integrations)
+        'tab_position' => 'top',           // 'top' or 'left'
         'integrations' => array(
             'acf' => array( 'enabled' => false ),  // Required for tabs mode
         ),
@@ -32,9 +34,29 @@ $manager = Manager::create(
 );
 ```
 
+## Tab Position
+
+Choose between horizontal or vertical tab layouts:
+
+**Horizontal Tabs (`'top'`)** - Default
+```php
+'tab_position' => 'top',
+```
+- Tabs appear above content
+- Familiar WordPress admin style
+- Good for 2-6 tabs
+
+**Vertical Tabs (`'left'`)**
+```php
+'tab_position' => 'left',
+```
+- Tabs appear in left sidebar
+- Better for many tabs
+- More screen space for content
+
 ## How It Looks
 
-Tabs mode gives you a 3-column layout:
+**With `tab_position => 'left'`:**
 
 ```
 ┌────────┬──────────────────┬─────────┐
@@ -46,6 +68,21 @@ Tabs mode gives you a 3-column layout:
 - **Left Column (200px)**: Vertical tab navigation
 - **Middle Column (flexible)**: Main content area with metaboxes
 - **Right Column (240px)**: Customizable sidebar (advertising, links, etc.)
+
+**With `tab_position => 'top'`:**
+
+```
+┌─────────────────────────────────────┐
+│              Tabs                   │
+├──────────────────┬──────────────────┤
+│  Main Content    │     Sidebar      │
+│   (flexible)     │      240px       │
+└──────────────────┴──────────────────┘
+```
+
+- **Top Row**: Horizontal tab navigation
+- **Left Column (flexible)**: Main content area with metaboxes
+- **Right Column (240px)**: Customizable sidebar
 
 ### On Mobile
 
@@ -94,7 +131,7 @@ add_filter( 'codesoup_options_sidebar_template', function( $template_path, $inst
     }
 
     // Use the built-in advertising template
-    return WP_PLUGIN_DIR . '/codesoup-options/includes/ui/templates/sidebar-advertising.php';
+    return WP_PLUGIN_DIR . '/codesoup-options/includes/templates/sidebar/advertising.php';
 
     // Or use your custom template
     // return __DIR__ . '/templates/custom-sidebar.php';

@@ -1,21 +1,25 @@
 # CodeSoup Options
 
-**Version 1.0.0** - WordPress options manager using custom post types with built-in ACF integration.
+**Version 1.0.2** - WordPress options manager using custom post types with built-in ACF integration.
 
 Manage WordPress options using custom post types instead of the wp_options table. Includes built-in Advanced Custom Fields integration and can be extended to use with any field framework (CMB2, MetaBox.io, Carbon Fields) or native metaboxes.
 
-## Why Custom Post Types?
+![CodeSoup Options Preview](assets/media/codesoup-options-preview.png)
 
+## Features
+
+- **Tabbed UI** - Organize options in tabs with horizontal or vertical layouts
 - **Revision History** - Track changes over time
 - **Post Locking** - Prevent concurrent edits
 - **Better Organization** - Multiple option pages with capability control
-- **Tabbed UI** - Modern tabbed interface with horizontal or vertical tabs
 - **Built-in ACF Integration** - Works out of the box with Advanced Custom Fields
+- **CodeSoup Metabox Schema** - Designed to work with [CodeSoup Metabox Schema](https://github.com/code-soup/metabox-schema) for declarative form generation
 - **Extensible** - Can be extended to use with CMB2, MetaBox.io, Carbon Fields, or native metaboxes
+- **Two UI Modes** - Choose between traditional pages mode or tabbed interface
 
 ## Requirements
 
-- PHP >= 7.2
+- PHP >= 7.4
 - WordPress >= 6.0
 - Optional: ACF, CMB2, MetaBox.io, or Carbon Fields
 
@@ -119,18 +123,21 @@ AI-optimized documentation for agents is available in the `skills/` directory. S
 Manager::create(
 	'instance_key',
 	array(
-		'post_type'      => 'custom_options',
-		'prefix'         => 'custom_',
-		'menu_label'     => 'Settings',
-		'menu_icon'      => 'dashicons-admin-settings',
-		'menu_position'  => 50,
-		'parent_menu'    => null,
-		'revisions'      => true,
-		'cache_duration' => HOUR_IN_SECONDS,
-		'debug'          => false,
-		'ui_mode'        => 'pages',  // 'pages' or 'tabs'
-		'tab_position'   => 'top',    // 'top', 'left', or 'right'
-		'integrations'   => array(
+		'post_type'       => 'custom_options',
+		'prefix'          => 'custom_',
+		'menu_label'      => 'Settings',
+		'menu_icon'       => 'dashicons-admin-settings',
+		'menu_position'   => 50,
+		'parent_menu'     => null,
+		'revisions'       => true,
+		'cache_duration'  => HOUR_IN_SECONDS,
+		'debug'           => false,
+		'ui_mode'         => 'pages',          // 'pages' or 'tabs' (see docs/tabbed-ui.md)
+		'tab_position'    => 'top',            // 'top' or 'left' (tabs mode only)
+		'disable_styles'  => false,            // Disable plugin styles
+		'disable_scripts' => false,            // Disable plugin scripts
+		'templates_dir'   => null,             // Custom templates directory path
+		'integrations'    => array(
 			'acf' => array(
 				'enabled' => true,
 				'class'   => 'CodeSoup\\Options\\Integrations\\ACF\\Init',

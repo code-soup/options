@@ -14,9 +14,9 @@ $manager = $this->manager;
 $post    = $manager->get_post_by_page_id( $active_tab );
 
 if ( ! $post ) {
-	printf(
-		'<div class="notice notice-error"><p>%s</p></div>',
-		esc_html__( 'Page data not found.', 'codesoup-options' )
+	\CodeSoup\Options\AdminNotice::error(
+		__( 'Page data not found.', 'codesoup-options' ),
+		false
 	);
 	return;
 }
@@ -25,9 +25,9 @@ $pages       = $manager->get_pages();
 $active_page = $pages[ $active_tab ] ?? null;
 
 if ( ! $active_page ) {
-	printf(
-		'<div class="notice notice-error"><p>%s</p></div>',
-		esc_html__( 'Page configuration error.', 'codesoup-options' )
+	\CodeSoup\Options\AdminNotice::error(
+		__( 'Page configuration error.', 'codesoup-options' ),
+		false
 	);
 	return;
 }
@@ -56,9 +56,9 @@ do_action( 'add_meta_boxes_' . $current_post_type, $post ); ?>
 	}
 
 	if ( ! $has_metaboxes ) {
-		require __DIR__ . '/empty.php';
+		require $manager->get_template_path( 'tabs/content/empty.php' );
 	} else {
-		require __DIR__ . '/form.php';
+		require $manager->get_template_path( 'tabs/content/form.php' );
 	}
 	?>
 

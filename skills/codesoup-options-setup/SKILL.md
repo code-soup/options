@@ -1,26 +1,28 @@
 ---
 name: CodeSoup Options Setup
-description: Set up and configure CodeSoup Options plugin for WordPress. Create options pages using ACF (Advanced Custom Fields), native metaboxes, or custom integrations (CMB2, MetaBox.io, Carbon Fields). Configure menu placement, post types, capabilities, and integrations.
+description: Set up and configure CodeSoup Options plugin for WordPress. Create options pages using ACF (Advanced Custom Fields), native metaboxes, CodeSoup Metabox Schema, or custom integrations (CMB2, MetaBox.io, Carbon Fields). Configure menu placement, post types, capabilities, integrations, tabbed UI mode, and styles.
 ---
 
 # CodeSoup Options Setup
 
-Set up WordPress options pages using custom post types with ACF integration, native metaboxes, or custom field frameworks.
+Set up WordPress options pages using custom post types with ACF integration, native metaboxes, CodeSoup Metabox Schema, or custom field frameworks.
 
 ## When to Use This Skill
 
 - Setting up WordPress options/settings pages
 - Integrating with Advanced Custom Fields (ACF)
 - Creating custom admin pages without ACF
+- Using CodeSoup Metabox Schema for declarative form generation
 - Integrating with CMB2, MetaBox.io, or Carbon Fields
 - Configuring WordPress admin menu placement
+- Setting up tabbed UI mode
 - Managing options with revision history and post locking
 
 ## Requirements
 
-- PHP >= 7.2
+- PHP >= 7.4
 - WordPress >= 6.0
-- Optional: ACF, CMB2, MetaBox.io, or Carbon Fields
+- Optional: ACF, CodeSoup Metabox Schema, CMB2, MetaBox.io, or Carbon Fields
 
 ## Installation
 
@@ -108,6 +110,10 @@ $manager = Manager::create(
 ### Method 2: Native Metaboxes (No Framework)
 
 Use when you want full control over HTML fields without any framework.
+
+**Works well with:**
+- Plain HTML forms
+- [CodeSoup Metabox Schema](https://github.com/code-soup/metabox-schema) for declarative form generation
 
 ```php
 use CodeSoup\Options\Manager;
@@ -396,16 +402,21 @@ $manager->init();
 
 ```php
 array(
-	'post_type'      => 'cs_options',               // Custom post type name
-	'prefix'         => 'cs_opt_',                  // Post slug prefix
-	'menu_label'     => 'Options',                  // Admin menu label
-	'menu_icon'      => 'dashicons-admin-generic',  // Dashicon or URL
-	'menu_position'  => 80,                         // Menu position (1-100)
-	'parent_menu'    => null,                       // Parent menu slug for submenu
-	'revisions'      => true,                       // Enable revision history
-	'cache_duration' => HOUR_IN_SECONDS,            // Cache duration in seconds
-	'debug'          => false,                      // Enable error logging
-	'integrations'   => array(                      // Integration configuration
+	'post_type'       => 'cs_options',               // Custom post type name
+	'prefix'          => 'cs_opt_',                  // Post slug prefix
+	'menu_label'      => 'Options',                  // Admin menu label
+	'menu_icon'       => 'dashicons-admin-generic',  // Dashicon or URL
+	'menu_position'   => 80,                         // Menu position (1-100)
+	'parent_menu'     => null,                       // Parent menu slug for submenu
+	'revisions'       => true,                       // Enable revision history
+	'cache_duration'  => HOUR_IN_SECONDS,            // Cache duration in seconds
+	'debug'           => false,                      // Enable error logging
+	'ui_mode'         => 'pages',                    // 'pages' or 'tabs'
+	'tab_position'    => 'top',                      // 'top' or 'left' (tabs mode only)
+	'disable_styles'  => false,                      // Disable plugin styles
+	'disable_scripts' => false,                      // Disable plugin scripts
+	'templates_dir'   => null,                       // Custom templates directory path
+	'integrations'    => array(                      // Integration configuration
 		'acf' => array(
 			'enabled' => true,
 			'class'   => 'CodeSoup\\Options\\Integrations\\ACF\\Init',
@@ -502,21 +513,59 @@ Default: `false`
 
 ### UI Mode
 
+Controls how options pages are displayed in WordPress admin.
+
 ```php
 Manager::create(
 	'site_settings',
 	array(
-		'ui_mode' => 'pages',  // or 'tabs'
+		'ui_mode'      => 'tabs',  // 'pages' or 'tabs'
+		'tab_position' => 'top',   // 'top' or 'left' (tabs mode only)
 	)
 );
 ```
 
-- **`'pages'`** (default) - Works with ACF/CMB2, each page is separate
-- **`'tabs'`** - Native metaboxes only, everything on one page
+**Pages Mode (`'pages'`)** - Default
+- Each registered page appears as separate WordPress admin page
+- Traditional WordPress admin experience
+- Works with all integrations (ACF, CMB2, etc.)
+- Best for simple configurations
 
-If integrations are enabled, uses pages mode automatically.
+**Tabs Mode (`'tabs'`)**
+- All pages grouped under single admin page with tab navigation
+- Horizontal tabs (top) or vertical tabs (left sidebar)
+- Recommended for native metaboxes
+- Tab position options:
+  - `'top'` - Horizontal tabs above content (default)
+  - `'left'` - Vertical tabs in left sidebar
 
-See `docs/ui-modes.md` for details.
+**Example: Tabbed Interface**
+
+```php
+use CodeSoup\Options\Manager;
+
+$manager = Manager::create(
+	'site_settings',
+	array(
+		'menu_label'   => 'Site Settings',
+		'ui_mode'      => 'tabs',
+		'tab_position' => 'left',
+		'integrations' => array(
+			'acf' => array( 'enabled' => false ),
+		),
+	)
+);
+
+$manager->register_pages(
+	array(
+		array( 'id' => 'general', 'title' => 'General', 'capability' => 'manage_options' ),
+		array( 'id' => 'header', 'title' => 'Header', 'capability' => 'manage_options' ),
+		array( 'id' => 'footer', 'title' => 'Footer', 'capability' => 'manage_options' ),
+	)
+);
+
+$manager->init();
+```
 
 ## Page Configuration
 

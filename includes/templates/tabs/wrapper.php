@@ -24,33 +24,35 @@ $page_slug = $this->get_page_slug();
 	<div class="codesoup-options-container">
 		<h1><?php echo esc_html( $this->manager->get_config( 'menu_label' ) ); ?></h1>
 
-		<?php if ( isset( $_GET['message'] ) && 'updated' === $_GET['message'] ) : ?>
-			<div class="notice notice-success is-dismissible">
-				<p><?php esc_html_e( 'Settings saved.', 'codesoup-options' ); ?></p>
-			</div>
-		<?php endif; ?>
+		<?php
+		if ( isset( $_GET['message'] ) && 'updated' === $_GET['message'] ) {
+			\CodeSoup\Options\AdminNotice::success(
+				__( 'Settings saved.', 'codesoup-options' )
+			);
+		}
+		?>
 
 		<?php
 		if ( 'top' === $tab_position ) {
-			require __DIR__ . '/navigation/horizontal.php';
+			require $this->manager->get_template_path( 'tabs/navigation/horizontal.php' );
 		}
 		?>
 
 		<!-- Mobile Navigation -->
-		<?php require __DIR__ . '/navigation/mobile.php'; ?>
+		<?php require $this->manager->get_template_path( 'tabs/navigation/mobile.php' ); ?>
 
 		<div class="codesoup-options-content-wrapper">
 			<?php
 			if ( 'left' === $tab_position ) {
-				require __DIR__ . '/navigation/vertical.php';
+				require $this->manager->get_template_path( 'tabs/navigation/vertical.php' );
 			}
 			?>
 
 			<div class="codesoup-options-tab-content">
-				<?php require __DIR__ . '/content/index.php'; ?>
+				<?php require $this->manager->get_template_path( 'tabs/content/index.php' ); ?>
 			</div>
 
-			<?php require dirname( __DIR__ ) . '/sidebar/banner-sidebar.php'; ?>
+			<?php require $this->manager->get_template_path( 'sidebar/banner-sidebar.php' ); ?>
 		</div>
 	</div>
 </div>

@@ -26,6 +26,7 @@ $manager = Manager::create(
     'site_settings',
     array(
         'ui_mode'      => 'tabs',
+        'tab_position' => 'top',               // 'top' or 'left'
         'integrations' => array(
             'acf' => array( 'enabled' => false ),  // Must disable
         ),
@@ -33,4 +34,10 @@ $manager = Manager::create(
 );
 ```
 
+**Tab Position:**
+- `'top'` (default) - Horizontal tabs above content
+- `'left'` - Vertical tabs in left sidebar
+
 Note: If any integration is enabled, the plugin uses Pages mode automatically.
+
+See [Tabbed UI](tabbed-ui.md) for complete documentation.
