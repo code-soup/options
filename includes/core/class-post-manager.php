@@ -49,6 +49,9 @@ class Post_Manager {
 			return;
 		}
 
+		$plural   = $post_type;
+		$singular = rtrim( $post_type, 's' );
+
 		register_post_type(
 			$post_type,
 			array(
@@ -62,10 +65,16 @@ class Post_Manager {
 				'show_in_menu'        => false,
 				'query_var'           => false,
 				'rewrite'             => false,
-				'capability_type'     => 'post',
+				'capability_type'     => array(
+					$singular,
+					$plural
+				),
 				'has_archive'         => false,
 				'hierarchical'        => false,
-				'supports'            => array( 'title', 'editor', 'custom-fields', 'revisions' ),
+				'supports'            => array(
+					'custom-fields',
+					'title',
+				),
 				'show_in_rest'        => false,
 				'delete_with_user'    => false,
 				'can_export'          => true,

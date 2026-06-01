@@ -2,16 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2026-04-10
+## [1.2.0] - 2026-06-01
 
 ### Breaking Changes
 
 - **Cache system completely removed** - Plugin no longer implements internal caching
-  - Removed `cache_duration` configuration option
-  - Removed `Cache` class and all caching logic
-  - Removed cache invalidation hooks and methods
-  - Options now read directly from database on each request
-  - WordPress object cache (Redis/Memcached) still works at WordPress level
+    - Removed `cache_duration` configuration option
+    - Removed `Cache` class and all caching logic
+    - Removed cache invalidation hooks and methods
+    - Options now read directly from database on each request
+    - WordPress object cache (Redis/Memcached) still works at WordPress level
 
 ### Added
 
@@ -38,16 +38,16 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 - **Configuration structure changed to nested groups** - Old flat structure still supported via backward compatibility layer
-  - `menu_label` → `menu.label`
-  - `menu_icon` → `menu.icon`
-  - `menu_position` → `menu.position`
-  - `parent_menu` → `menu.parent`
-  - `ui_mode` → `ui.mode`
-  - `tab_position` → `ui.tab_position`
-  - `templates_dir` → `ui.templates_dir`
-  - `disable_styles` → `assets.disable_styles`
-  - `disable_scripts` → `assets.disable_scripts`
-  - `disable_branding` → `assets.disable_branding`
+    - `menu_label` → `menu.label`
+    - `menu_icon` → `menu.icon`
+    - `menu_position` → `menu.position`
+    - `parent_menu` → `menu.parent`
+    - `ui_mode` → `ui.mode`
+    - `tab_position` → `ui.tab_position`
+    - `templates_dir` → `ui.templates_dir`
+    - `disable_styles` → `assets.disable_styles`
+    - `disable_scripts` → `assets.disable_scripts`
+    - `disable_branding` → `assets.disable_branding`
 
 ### Added
 
