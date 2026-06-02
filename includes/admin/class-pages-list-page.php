@@ -71,9 +71,8 @@ class Pages_List_Page {
 			$this->list_table = new Pages_List_Table( $this->manager );
 		}
 
-		$this->list_table->prepare_items();
+		$this->list_table->prepare_items(); ?>
 
-		?>
 		<div class="wrap">
 			<?php $config = $this->manager->get_config(); ?>
 			<h1 class="wp-heading-inline"><?php echo esc_html( $config['menu']['label'] ); ?></h1>

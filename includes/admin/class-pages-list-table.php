@@ -80,6 +80,8 @@ class Pages_List_Table extends \WP_List_Table {
 
 			$post = $this->manager->get_post_by_page_id( $page->id );
 
+
+
 			$items[] = array(
 				'id'          => $page->id,
 				'title'       => $page->title,

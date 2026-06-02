@@ -88,34 +88,53 @@ class Post_Manager {
 	}
 
 	/**
+	 * Check if we're on a relevant screen where pages should be created
+	 *
+	 * @param \WP_Screen $screen Current screen.
+	 * @return bool
+	 */
+	private function is_relevant_screen( \WP_Screen $screen ): bool {
+		$post_type = $this->manager->get_post_type();
+		$config    = $this->manager->get_config();
+
+		// Check for post type screens (edit list and single post edit)
+		if ( $screen->post_type === $post_type || $screen->id === 'edit-' . $post_type ) {
+			return true;
+		}
+
+		// Check for tabs mode admin page
+		if ( 'tabs' === $config['ui']['mode'] ) {
+			$admin_page = $this->manager->get_admin_page();
+			if ( $admin_page && $screen->id === $admin_page->get_screen_id() ) {
+				return true;
+			}
+		}
+
+		// Check for pages mode admin page
+		if ( 'pages' === $config['ui']['mode'] ) {
+			$pages_list_page = $this->manager->get_pages_list_page();
+			if ( $pages_list_page && $screen->id === $pages_list_page->get_screen_id() ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Maybe ensure pages exist
 	 *
 	 * @param \WP_Screen $screen Current screen.
 	 * @return void
 	 */
 	public function maybe_ensure_pages_exist( \WP_Screen $screen ): void {
-		$post_type = $this->manager->get_post_type();
-		$config    = $this->manager->get_config();
-
-		// Check for pages mode (post type screens)
-		$is_pages_mode = $screen->post_type === $post_type || $screen->id === 'edit-' . $post_type;
-
-		// Check for tabs mode (admin page screen)
-		$is_tabs_mode = false;
-		if ( 'tabs' === $config['ui']['mode'] ) {
-			$admin_page   = $this->manager->get_admin_page();
-			$is_tabs_mode = $admin_page && $screen->id === $admin_page->get_screen_id();
-		}
-
-		if ( $is_pages_mode || $is_tabs_mode ) {
+		if ( $this->is_relevant_screen( $screen ) ) {
 			$this->ensure_pages_exist();
 		}
 	}
 
 	/**
 	 * Ensure all registered pages exist
-	 *
-	 * Uses batch query to check all pages at once for better performance.
 	 *
 	 * @return void
 	 */
@@ -126,41 +145,40 @@ class Post_Manager {
 			return;
 		}
 
-		// Get all post names we need to check.
-		$post_names = array();
-		$pages_map  = array();
+		// create_page() already checks if page exists
 		foreach ( $pages as $page ) {
-			$post_name               = $this->get_post_name( $page->id );
-			$post_names[]            = $post_name;
-			$pages_map[ $post_name ] = $page;
+			$this->create_page( $page );
 		}
+	}
 
-		// Batch query to check which posts exist.
-		// WordPress 'fields' only supports 'ids', 'id=>parent', or 'all'.
-		// We need post_name, so we must use 'all' and extract the names.
-		$existing_posts = get_posts(
-			array(
-				'post_type'      => $this->manager->get_post_type(),
-				'post_name__in'  => $post_names,
-				'post_status'    => 'any',
-				'posts_per_page' => -1,
-				'fields'         => 'all',
-			)
+	/**
+	 * Get post by post_name and post_type using direct SQL
+	 *
+	 * @param string $post_name Post slug/name.
+	 * @param string $post_type Post type.
+	 * @return \WP_Post|null Post object if found, null otherwise.
+	 */
+	private function get_post_by_name_and_type( string $post_name, string $post_type ): ?\WP_Post {
+		global $wpdb;
+
+		$query = $wpdb->prepare(
+			"SELECT ID
+			FROM {$wpdb->posts}
+			WHERE post_name = %s
+			AND post_type = %s
+			AND post_status IN ('publish')
+			LIMIT 1",
+			$post_name,
+			$post_type
 		);
 
-		// Extract post_name from WP_Post objects and build lookup array.
-		$existing_names = array();
-		foreach ( $existing_posts as $post ) {
-			if ( isset( $post->post_name ) ) {
-				$existing_names[ $post->post_name ] = true;
-			}
+		$post_id = $wpdb->get_var( $query );
+
+		if ( ! $post_id ) {
+			return null;
 		}
 
-		foreach ( $pages_map as $post_name => $page ) {
-			if ( ! isset( $existing_names[ $post_name ] ) ) {
-				$this->create_page( $page );
-			}
-		}
+		return get_post( $post_id );
 	}
 
 	/**
@@ -173,17 +191,10 @@ class Post_Manager {
 		$post_name = $this->get_post_name( $page->id );
 		$post_type = $this->manager->get_post_type();
 
-		// Check if post already exists.
-		$existing = get_posts(
-			array(
-				'post_type'   => $post_type,
-				'post_name'   => $post_name,
-				'post_status' => 'any',
-				'numberposts' => 1,
-			)
-		);
+		// Check if post already exists using direct SQL
+		$existing = $this->get_post_by_name_and_type( $post_name, $post_type );
 
-		if ( ! empty( $existing ) ) {
+		if ( $existing ) {
 			return;
 		}
 
@@ -286,17 +297,11 @@ class Post_Manager {
 	 */
 	public function get_post_by_page_id( string $page_id ): ?\WP_Post {
 		$post_name = $this->get_post_name( $page_id );
+		$post_type = $this->manager->get_post_type();
 
-		// Query for post by slug.
-		$posts = get_posts(
-			array(
-				'post_type'      => $this->manager->get_post_type(),
-				'post_name'      => $post_name,
-				'post_status'    => 'any',
-				'posts_per_page' => 1,
-			)
-		);
+		// Check if post already exists using direct SQL
+		$page = $this->get_post_by_name_and_type( $post_name, $post_type );
 
-		return ! empty( $posts ) ? $posts[0] : null;
+		return ! empty( $page ) ? $page : null;
 	}
 }
