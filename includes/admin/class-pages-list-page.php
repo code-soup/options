@@ -95,4 +95,20 @@ class Pages_List_Page {
 		</div>
 		<?php
 	}
+
+	/**
+	 * Get screen ID
+	 *
+	 * @return string
+	 */
+	public function get_screen_id(): string {
+		$config    = $this->manager->get_config();
+		$page_slug = $this->get_page_slug();
+
+		if ( ! empty( $config['menu']['parent'] ) ) {
+			return $config['menu']['parent'] . '_page_' . $page_slug;
+		}
+
+		return $page_slug;
+	}
 }

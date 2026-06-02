@@ -96,24 +96,37 @@ class Post_Manager {
 	private function is_relevant_screen( \WP_Screen $screen ): bool {
 		$post_type = $this->manager->get_post_type();
 		$config    = $this->manager->get_config();
+		$screen_id = str_replace('toplevel_page_', '', $screen->id);
 
 		// Check for post type screens (edit list and single post edit)
-		if ( $screen->post_type === $post_type || $screen->id === 'edit-' . $post_type ) {
+		if (
+			$screen->post_type === $post_type
+			|| $screen->id === 'edit-' . $post_type
+		) {
 			return true;
 		}
 
 		// Check for tabs mode admin page
-		if ( 'tabs' === $config['ui']['mode'] ) {
+		if ( 'tabs' === $config['ui']['mode'] )
+		{
 			$admin_page = $this->manager->get_admin_page();
-			if ( $admin_page && $screen->id === $admin_page->get_screen_id() ) {
+
+			if ( $admin_page
+				&& $screen_id === $admin_page->get_screen_id()
+			) {
 				return true;
 			}
 		}
 
 		// Check for pages mode admin page
-		if ( 'pages' === $config['ui']['mode'] ) {
+		if ( 'pages' === $config['ui']['mode'] )
+		{
 			$pages_list_page = $this->manager->get_pages_list_page();
-			if ( $pages_list_page && $screen->id === $pages_list_page->get_screen_id() ) {
+			
+			if (
+				$pages_list_page
+				&& $screen_id === $pages_list_page->get_screen_id()
+			) {
 				return true;
 			}
 		}
@@ -140,6 +153,8 @@ class Post_Manager {
 	 */
 	public function ensure_pages_exist(): void {
 		$pages = $this->manager->get_pages();
+
+		error_log('pages'. print_r($pages, true));
 
 		if ( empty( $pages ) ) {
 			return;
@@ -193,6 +208,8 @@ class Post_Manager {
 
 		// Check if post already exists using direct SQL
 		$existing = $this->get_post_by_name_and_type( $post_name, $post_type );
+
+		error_log( print_r($existing, true));
 
 		if ( $existing ) {
 			return;
