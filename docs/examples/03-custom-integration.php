@@ -84,11 +84,13 @@ class CMB2Integration implements IntegrationInterface {
 	 * @return void
 	 */
 	public function register_metaboxes(): void {
-		$config = $this->manager->get_config();
-		$pages  = $this->manager->get_pages();
+		$config       = $this->manager->get_config();
+		$pages        = $this->manager->get_pages();
+		$post_manager = $this->manager->get_post_manager();
 
 		foreach ( $pages as $page ) {
-			$post_name = $config['prefix'] . $page->id;
+			// Use Post_Manager to generate consistent post names.
+			$post_name = $post_manager->get_post_name( $page->id );
 
 			// Register CMB2 metabox for this page.
 			$cmb = new_cmb2_box(

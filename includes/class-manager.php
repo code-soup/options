@@ -404,8 +404,9 @@ class Manager {
 			);
 		}
 
-		$config = $instance->get_config();
-		$pages  = $instance->get_pages();
+		$config       = $instance->get_config();
+		$pages        = $instance->get_pages();
+		$post_manager = $instance->get_post_manager();
 
 		$debug_info = array(
 			'success'      => true,
@@ -415,7 +416,8 @@ class Manager {
 		);
 
 		foreach ( $pages as $page ) {
-			$post_name = self::normalize_slug( $config['prefix'] . $page->id );
+			// Use Post_Manager to generate consistent post names.
+			$post_name = $post_manager->get_post_name( $page->id );
 
 			$page_data = array(
 				'id'          => $page->id,
@@ -458,20 +460,26 @@ class Manager {
 		// Apply backward compatibility layer.
 		$config = Config_Helper::normalize( $config, $instance_key );
 
+		// Build default post_type and prefix from instance_key with proper formatting.
+		// Post types and prefixes use underscores, not dashes.
+		$normalized_key      = self::sanitize_post_type_value( $this->instance_key );
+		$default_post_type   = self::sanitize_post_type_value( $normalized_key . '_options' );
+		$default_prefix      = self::sanitize_post_type_value( $normalized_key . '_options' );
+
 		// Merge with defaults.
 		$this->config = array_replace_recursive(
 			self::CONFIG_DEFAULTS,
 			array(
-				'post_type' => $this->instance_key . '_options',
-				'prefix'    => $this->instance_key . '_options_',
+				'post_type' => $default_post_type,
+				'prefix'    => $default_prefix,
 			),
 			$config
 		);
 
 		// Sanitize config values.
 		$this->config['menu']['label'] = sanitize_text_field( $this->config['menu']['label'] );
-		$this->config['post_type']     = sanitize_key( $this->config['post_type'] );
-		$this->config['prefix']        = sanitize_key( $this->config['prefix'] );
+		$this->config['post_type']     = self::sanitize_post_type_value( $this->config['post_type'] );
+		$this->config['prefix']        = self::sanitize_post_type_value( $this->config['prefix'] );
 
 		// Initialize logger (needed for validation).
 		$this->logger = new Logger( $this->instance_key, $this->config['debug'] );
@@ -759,13 +767,52 @@ class Manager {
 	}
 
 	/**
-	 * Normalize slug by converting underscores to dashes
+	 * Normalize slug by converting dashes to underscores
+	 *
+	 * Used for post names (post_name field) which should use dashes.
 	 *
 	 * @param string $slug Slug to normalize.
 	 * @return string Normalized slug with dashes.
 	 */
 	public static function normalize_slug( string $slug ): string {
-		return str_replace( '_', '-', sanitize_title( $slug ) );
+		// Convert to lowercase and sanitize
+		$slug = sanitize_title( $slug );
+
+		// Remove consecutive dashes and underscores
+		$slug = preg_replace( '/[-_]+/', '-', $slug );
+
+		// Trim dashes from start and end
+		$slug = trim( $slug, '-' );
+
+		return $slug;
+	}
+
+	/**
+	 * Sanitize post type or prefix value
+	 *
+	 * Converts to lowercase, replaces dashes with underscores,
+	 * removes consecutive underscores, and strips leading/trailing underscores.
+	 *
+	 * Post types and prefixes should use underscores, not dashes.
+	 *
+	 * @param string $value Value to sanitize.
+	 * @return string Sanitized value with only underscores as separators.
+	 */
+	private static function sanitize_post_type_value( string $value ): string {
+		// Convert to lowercase and remove invalid characters
+		$value = strtolower( $value );
+		$value = preg_replace( '/[^a-z0-9_\-]/', '', $value );
+
+		// Replace dashes with underscores
+		$value = str_replace( '-', '_', $value );
+
+		// Remove consecutive underscores
+		$value = preg_replace( '/_+/', '_', $value );
+
+		// Trim underscores from start and end
+		$value = trim( $value, '_' );
+
+		return $value;
 	}
 
 	/**

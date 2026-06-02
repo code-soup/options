@@ -136,24 +136,25 @@ class Post_Manager {
 		}
 
 		// Batch query to check which posts exist.
+		// WordPress 'fields' only supports 'ids', 'id=>parent', or 'all'.
+		// We need post_name, so we must use 'all' and extract the names.
 		$existing_posts = get_posts(
 			array(
 				'post_type'      => $this->manager->get_post_type(),
 				'post_name__in'  => $post_names,
 				'post_status'    => 'any',
 				'posts_per_page' => -1,
-				'fields'         => 'names',
+				'fields'         => 'all',
 			)
 		);
 
-		// Create missing posts.
-		$existing_names = array_filter(
-			$existing_posts,
-			function( $name ) {
-				return is_string( $name ) || is_int( $name );
+		// Extract post_name from WP_Post objects and build lookup array.
+		$existing_names = array();
+		foreach ( $existing_posts as $post ) {
+			if ( isset( $post->post_name ) ) {
+				$existing_names[ $post->post_name ] = true;
 			}
-		);
-		$existing_names = array_flip( $existing_names );
+		}
 
 		foreach ( $pages_map as $post_name => $page ) {
 			if ( ! isset( $existing_names[ $post_name ] ) ) {
@@ -182,7 +183,7 @@ class Post_Manager {
 			)
 		);
 
-		if ( array() !== $existing ) {
+		if ( ! empty( $existing ) ) {
 			return;
 		}
 
@@ -224,15 +225,38 @@ class Post_Manager {
 	/**
 	 * Get post name from page ID
 	 *
+	 * Format: {prefix-with-dashes}-{page-id-with-dashes}
+	 * - Prefix converted to dashes (from underscore format in config)
+	 * - Page ID uses dashes (normalized slug)
+	 * - Separator between prefix and page is dash
+	 * - Post names are fully controlled by this package and can use any format
+	 *
 	 * @param string $page_id Page identifier.
 	 * @return string
 	 */
 	public function get_post_name( string $page_id ): string {
-		return $this->manager->get_config( 'prefix' ) . Manager::normalize_slug( $page_id );
+		$prefix = $this->manager->get_config( 'prefix' );
+
+		// Convert prefix from underscores to dashes for post_name.
+		// Config uses underscores, but post_name uses dashes.
+		$prefix_with_dashes = str_replace( '_', '-', $prefix );
+
+		// Normalize page ID to use dashes.
+		$normalized_page = Manager::normalize_slug( $page_id );
+
+		// Combine both parts with dash separator.
+		// Final format: prefix-page-id (e.g., 'site-settings-options-general')
+		$post_name = $prefix_with_dashes . '-' . $normalized_page;
+
+		// Normalize the complete post name to remove any consecutive dashes.
+		return Manager::normalize_slug( $post_name );
 	}
 
 	/**
 	 * Extract page ID from post name
+	 *
+	 * Extracts the page ID from a post name in format: {prefix-with-dashes}-{page-id}
+	 * Converts underscore prefix from config to dashes to match post_name format.
 	 *
 	 * @param string $post_name Post name.
 	 * @return string|null Page ID or null if prefix doesn't match.
@@ -240,11 +264,18 @@ class Post_Manager {
 	public function extract_page_id_from_post_name( string $post_name ): ?string {
 		$prefix = $this->manager->get_config( 'prefix' );
 
-		if ( strpos( $post_name, $prefix ) !== 0 ) {
+		// Convert prefix from underscores to dashes to match post_name format.
+		$prefix_with_dashes = str_replace( '_', '-', $prefix );
+
+		// Add dash separator to match the format created by get_post_name().
+		$prefix_with_separator = $prefix_with_dashes . '-';
+
+		if ( strpos( $post_name, $prefix_with_separator ) !== 0 ) {
 			return null;
 		}
 
-		return str_replace( '_', '-', substr( $post_name, strlen( $prefix ) ) );
+		// Return the page ID part (everything after prefix-).
+		return substr( $post_name, strlen( $prefix_with_separator ) );
 	}
 
 	/**

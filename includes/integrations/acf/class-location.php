@@ -77,9 +77,10 @@ class Location extends \ACF_Location {
 			$pages                = $manager->get_pages();
 
 			foreach ( $pages as $page ) {
-				$key             = Manager::normalize_slug(
-					$manager->get_config( 'prefix' ) . $page->id
-				);
+				// Use Post_Manager to generate consistent post names.
+				$post_manager = $manager->get_post_manager();
+				$key          = $post_manager->get_post_name( $page->id );
+
 				$choices[ $key ] = sprintf(
 					'%s - %s',
 					$manager->get_config()['menu']['label'],
