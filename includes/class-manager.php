@@ -256,6 +256,17 @@ class Manager {
 			$nonce   = $args['nonce'];
 			$data    = $args['data'];
 
+			// Verify nonce first before any other checks.
+			if ( ! wp_verify_nonce( $nonce, 'update-post_' . $post_id ) ) {
+				throw new \InvalidArgumentException(
+					sprintf(
+						/* translators: %d: post ID */
+						__( 'Nonce verification failed for post %d.', 'codesoup-options' ),
+						$post_id
+					)
+				);
+			}
+
 			$post = get_post( $post_id );
 
 			if ( ! $post ) {
@@ -273,16 +284,6 @@ class Manager {
 					sprintf(
 						/* translators: %d: post ID */
 						__( 'Post ID %d is not a valid options post.', 'codesoup-options' ),
-						$post_id
-					)
-				);
-			}
-
-			if ( ! wp_verify_nonce( $nonce, 'update-post_' . $post_id ) ) {
-				throw new \InvalidArgumentException(
-					sprintf(
-						/* translators: %d: post ID */
-						__( 'Nonce verification failed for post %d.', 'codesoup-options' ),
 						$post_id
 					)
 				);

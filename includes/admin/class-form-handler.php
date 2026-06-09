@@ -55,7 +55,20 @@ class Form_Handler {
 	 * @return void
 	 */
 	public function handle_save(): void {
-		$post_id      = isset( $_POST['post_ID'] ) ? absint( $_POST['post_ID'] ) : 0;
+		// Verify nonce first before accessing any POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified on next line.
+		$post_id_for_nonce = isset( $_POST['post_ID'] ) ? absint( $_POST['post_ID'] ) : 0;
+
+		if ( ! check_admin_referer( 'update-post_' . $post_id_for_nonce ) ) {
+			wp_die(
+				esc_html__( 'Nonce verification failed.', 'codesoup-options' ),
+				esc_html__( 'Error', 'codesoup-options' ),
+				array( 'response' => 403 )
+			);
+		}
+
+		// Now safe to access POST data after nonce verification.
+		$post_id      = $post_id_for_nonce;
 		$instance_key = isset( $_POST['instance_key'] ) ? sanitize_key( $_POST['instance_key'] ) : '';
 		$page_id      = isset( $_POST['page_id'] ) ? sanitize_key( $_POST['page_id'] ) : '';
 
@@ -72,14 +85,6 @@ class Form_Handler {
 				esc_html__( 'Invalid instance key.', 'codesoup-options' ),
 				esc_html__( 'Error', 'codesoup-options' ),
 				array( 'response' => 400 )
-			);
-		}
-
-		if ( ! check_admin_referer( 'update-post_' . $post_id ) ) {
-			wp_die(
-				esc_html__( 'Nonce verification failed.', 'codesoup-options' ),
-				esc_html__( 'Error', 'codesoup-options' ),
-				array( 'response' => 403 )
 			);
 		}
 

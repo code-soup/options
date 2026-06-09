@@ -165,10 +165,11 @@ class Init implements IntegrationInterface {
 		}
 
 		// Defensive nonce verification (ACF should handle this, but verify anyway).
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- ACF handles nonce, this is defensive check.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Checked on next line.
 		if ( isset( $_POST['acf'] ) && ! empty( $_POST['_wpnonce'] ) ) {
 			// Verify ACF nonce if present.
-			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'update-post_' . $post_id ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in wp_verify_nonce.
+			if ( ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'update-post_' . $post_id ) ) {
 				$this->manager->get_logger()->warning(
 					sprintf(
 						/* translators: %d: post ID */

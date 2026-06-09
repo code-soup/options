@@ -19,8 +19,28 @@ $sidebar_template = apply_filters(
 	$this->manager->get_instance_key()
 );
 
-// If template doesn't exist, return
-if ( ! file_exists( $sidebar_template ) ) {
+// Validate template path is safe
+$allowed_dirs = array(
+	\CodeSoup\Options\Path_Helper::get_base_path(),
+	get_stylesheet_directory(),
+	get_template_directory(),
+);
+
+$is_allowed = false;
+$real_path  = realpath( $sidebar_template );
+
+if ( $real_path ) {
+	foreach ( $allowed_dirs as $allowed_dir ) {
+		$real_allowed = realpath( $allowed_dir );
+		if ( $real_allowed && strpos( $real_path, $real_allowed ) === 0 ) {
+			$is_allowed = true;
+			break;
+		}
+	}
+}
+
+// If template doesn't exist or not in allowed directory, return
+if ( ! $is_allowed || ! file_exists( $sidebar_template ) ) {
 	return;
 }
 ?>

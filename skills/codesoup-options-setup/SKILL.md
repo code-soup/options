@@ -756,8 +756,26 @@ $settings_manager->init();
 
 - **Revision History** - Track changes over time
 - **Post Locking** - Prevent concurrent edits
+- **Automatic Capabilities** - Post type and custom page capabilities automatically added to administrator role
 - **Better Organization** - Multiple option pages with capability control
 - **Built-in ACF Integration** - Works out of the box with Advanced Custom Fields
 - **Extensible** - Can be extended to use with CMB2, MetaBox.io, Carbon Fields, or native metaboxes
+
+## Capability Management
+
+Capabilities are automatically added to the administrator role:
+
+**Post Type Capabilities:** 13 standard WordPress capabilities for the custom post type (edit, delete, publish, etc.)
+
+**Custom Page Capabilities:** Unique capabilities from page configurations (e.g., `manage_navigation`, `manage_footer_disclosure`)
+
+**Automatic Detection:** Standard WordPress capabilities like `manage_options` and `edit_pages` are skipped since admin already has them.
+
+**Force Regeneration:**
+```php
+use CodeSoup\Options\Post_Manager;
+
+Post_Manager::regenerate_capabilities();
+```
 
 

@@ -570,6 +570,33 @@ $manager->register_metabox(
 
 ---
 
+## Capability Management
+
+### Post_Manager::regenerate_capabilities(): void
+
+Force regeneration of all capabilities. Clears capability flags and capabilities will be re-added to administrator role on next page load.
+
+**Usage:**
+```php
+use CodeSoup\Options\Post_Manager;
+
+Post_Manager::regenerate_capabilities();
+```
+
+**When to use:**
+- After changing page capabilities in code
+- After adding new pages with custom capabilities
+- Troubleshooting capability issues
+
+**How it works:**
+- Post type capabilities (13 standard WordPress caps) added automatically on `register_post_type()`
+- Custom page capabilities (from page config) added automatically on `ensure_pages_exist()`
+- Standard WordPress capabilities (like `manage_options`, `edit_pages`) skipped - admin already has them
+- Uses `wp_options` to track which capabilities have been added
+- Call `regenerate_capabilities()` to clear flags and force re-check
+
+---
+
 ## Template Variables
 
 Available in metabox templates:

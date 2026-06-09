@@ -24,7 +24,11 @@ wp db export backup-before-migration.sql
 
 ### Step 2: Prepare Migration Code
 
-The `Migration` class handles renaming posts and syncing capabilities. You need to:
+The `Migration` class handles renaming posts and syncing page capabilities in post meta.
+
+**Note:** Post type and custom page capabilities are automatically added to administrator role. Migration only syncs the capability stored in each page's post meta.
+
+You need to:
 1. Keep your old configuration values
 2. Update your code with new configuration
 3. Run the migration once

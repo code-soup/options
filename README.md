@@ -9,6 +9,7 @@ Manage WordPress options using custom post types instead of the wp_options table
 ## Features
 
 - **Tabbed UI** - Organize options in tabs with horizontal or vertical layouts
+- **Automatic Capabilities** - Post type and custom page capabilities automatically added to administrator role
 - **Revision History** - Track changes over time
 - **Post Locking** - Prevent concurrent edits
 - **Better Organization** - Multiple option pages with capability control
