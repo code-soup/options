@@ -36,7 +36,9 @@ Complete working examples are available in the `examples/` directory:
 
 ### Step 2: Prepare Migration Code
 
-The `Migration` class handles renaming posts and syncing capabilities.
+The `Migration` class handles renaming posts and syncing page capabilities in post meta.
+
+**Note:** Post type and custom page capabilities are automatically added to administrator role. Migration only syncs the capability stored in each page's post meta.
 
 **Requirements:**
 1. Keep your old configuration values
@@ -123,10 +125,13 @@ var_dump( $options ); // Should contain your data
 After successful migration:
 
 1. **Remove migration code** - Delete temporary migration scripts
-2. **Clear all caches:**
+2. **Clear WordPress cache (if object cache enabled):**
 
 ```php
+// Clear WordPress object cache (Redis/Memcached)
 wp_cache_flush();
+
+// Clear transients
 delete_option( '_transient_timeout_*' );
 delete_option( '_transient_*' );
 ```
@@ -318,7 +323,7 @@ foreach ( $posts as $post ) {
 3. **Run once** - Migrations should be one-time operations
 4. **Verify results** - Check data integrity after migration
 5. **Document changes** - Keep a record of what was migrated and when
-6. **Clear caches** - Flush all caches after migration
+6. **Clear WordPress cache** - Flush WP object cache if enabled
 7. **Remove migration code** - Delete temporary migration scripts after use
 
 ## Advanced: Custom Migration Logic
@@ -356,9 +361,8 @@ foreach ( $posts as $post ) {
 		)
 	);
 
-	// Clear cache
-	$manager = Manager::get( 'site_settings' );
-	wp_cache_delete( 'options_' . $post->ID, 'codesoup_options' );
+	// Clear WordPress post cache
+	clean_post_cache( $post->ID );
 }
 ```
 
@@ -408,8 +412,8 @@ function migrate_data_structure() {
 			)
 		);
 
-		// Clear cache
-		wp_cache_delete( 'options_' . $post->ID, 'codesoup_options' );
+		// Clear WordPress post cache
+		clean_post_cache( $post->ID );
 	}
 
 	return true;
@@ -497,10 +501,12 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'site_settings',
 	array(
-		'post_type'    => 'site_options',
-		'prefix'       => 'site_opt_',
-		'menu_label'   => 'Site Settings',
-		'debug'        => true, // Enable logging during migration
+		'post_type' => 'site_options',
+		'prefix'    => 'site_opt_',
+		'menu'      => array(
+			'label' => 'Site Settings',
+		),
+		'debug'     => true, // Enable logging during migration
 	)
 );
 
@@ -599,9 +605,11 @@ $options = $manager->get_options( 'general' );
 echo "\nGeneral options data:\n";
 print_r( $options );
 
-// Step 6: Clear caches
-wp_cache_flush();
-echo "\n✓ Caches cleared\n";
+// Step 6: Clear WordPress cache (if object cache enabled)
+if ( function_exists( 'wp_cache_flush' ) ) {
+	wp_cache_flush();
+	echo "\n✓ WordPress cache cleared\n";
+}
 
 echo "\nMigration complete! Please verify data in WordPress admin.\n";
 echo "Remember to:\n";

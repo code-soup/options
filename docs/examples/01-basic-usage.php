@@ -14,10 +14,12 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'basic_settings',
 	array(
-		'menu_label'    => 'Site Settings',
-		'menu_icon'     => 'dashicons-admin-settings',
-		'menu_position' => 50,
-		'integrations'  => array(
+		'menu'         => array(
+			'label'    => 'Site Settings',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+		),
+		'integrations' => array(
 			'acf' => array(
 				'enabled' => false, // Disable ACF integration.
 			),
@@ -118,7 +120,7 @@ add_action(
 
 		if ( is_wp_error( $result ) ) {
 			// Log error or show admin notice.
-			error_log( 'Failed to save options: ' . $result->get_error_message() );
+			$manager->get_logger()->error( 'Failed to save options: ' . $result->get_error_message() );
 		}
 	},
 	10,

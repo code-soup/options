@@ -57,8 +57,26 @@ class Migration {
 		}
 
 		$new_config    = $instance->get_config();
-		$old_post_type = isset( $old_config['post_type'] ) ? sanitize_key( $old_config['post_type'] ) : null;
-		$old_prefix    = isset( $old_config['prefix'] ) ? sanitize_key( $old_config['prefix'] ) : null;
+
+		// Normalize old config values the same way they would have been normalized
+		// when originally stored. This ensures we can match existing post names
+		// even if the user provides messy old config values (e.g., 'site___settings').
+		$old_post_type = null;
+		$old_prefix    = null;
+
+		if ( isset( $old_config['post_type'] ) ) {
+			// Normalize old post_type using the same method that would have been
+			// used when it was originally stored.
+			$old_post_type = Manager::sanitize_post_type_value( $old_config['post_type'] );
+		}
+
+		if ( isset( $old_config['prefix'] ) ) {
+			// Normalize old prefix using the same method that would have been
+			// used when it was originally stored.
+			$old_prefix = Manager::sanitize_post_type_value( $old_config['prefix'] );
+		}
+
+		// New config values are already sanitized by Manager constructor.
 		$new_post_type = $new_config['post_type'];
 		$new_prefix    = $new_config['prefix'];
 
@@ -77,6 +95,7 @@ class Migration {
 				'post_type'      => $old_post_type ?? $new_post_type,
 				'posts_per_page' => -1,
 				'post_status'    => 'any',
+				'no_found_rows'  => true,
 			)
 		);
 
@@ -86,6 +105,7 @@ class Migration {
 		}
 
 		// Build capability map from new pages.
+		// Key must match the page ID format in post_name (dashes, not underscores).
 		$capability_map = array();
 		foreach ( $new_pages as $page_args ) {
 			if ( ! is_array( $page_args ) ) {
@@ -93,11 +113,12 @@ class Migration {
 			}
 
 			if ( isset( $page_args['id'] ) && isset( $page_args['capability'] ) ) {
-				$sanitized_id         = sanitize_key( $page_args['id'] );
+				// Normalize page ID to match post_name format (dashes).
+				$normalized_id        = Manager::normalize_slug( $page_args['id'] );
 				$sanitized_capability = sanitize_key( $page_args['capability'] );
 
-				if ( ! empty( $sanitized_id ) && ! empty( $sanitized_capability ) ) {
-					$capability_map[ $sanitized_id ] = $sanitized_capability;
+				if ( ! empty( $normalized_id ) && ! empty( $sanitized_capability ) ) {
+					$capability_map[ $normalized_id ] = $sanitized_capability;
 				}
 			}
 		}
@@ -123,11 +144,19 @@ class Migration {
 
 			// Update post_name (prefix) if changed.
 			if ( $old_prefix && $old_prefix !== $new_prefix ) {
-				$old_name              = $post->post_name;
-				$old_prefix_normalized = Manager::normalize_slug( $old_prefix );
-				if ( strpos( $old_name, $old_prefix_normalized ) === 0 ) {
-					$page_id  = substr( $old_name, strlen( $old_prefix_normalized ) );
-					$new_name = Manager::normalize_slug( $new_prefix . $page_id );
+				$old_name = $post->post_name;
+
+				// Convert old prefix to dashes for post_name comparison.
+				$old_prefix_with_dashes = str_replace( '_', '-', $old_prefix );
+				$old_prefix_with_separator = $old_prefix_with_dashes . '-';
+
+				if ( strpos( $old_name, $old_prefix_with_separator ) === 0 ) {
+					// Extract page ID from old post name (everything after prefix-).
+					$page_id = substr( $old_name, strlen( $old_prefix_with_separator ) );
+
+					// Build new post name using format: {new-prefix-with-dashes}-{page-id}.
+					$new_prefix_with_dashes = str_replace( '_', '-', $new_prefix );
+					$new_name = Manager::normalize_slug( $new_prefix_with_dashes . '-' . $page_id );
 
 					$result = wp_update_post(
 						array(
@@ -148,32 +177,23 @@ class Migration {
 						++$results['prefix_changed'];
 						$updated = true;
 
-						// Clear cache with old and new keys.
-						$cache         = $instance->get_cache();
-						$old_cache_key = $cache->get_key( $page_id );
-						$cache->delete( $old_cache_key );
-
-						// Clear new cache key.
-						$new_cache_key = $cache->get_key( $page_id );
-						$cache->delete( $new_cache_key );
-
-						// Clear post_id cache.
-						$post_id_cache_key = $cache->get_key( 'post_id_' . $page_id );
-						$cache->delete( $post_id_cache_key );
-
-						// Clear instance page cache.
-						$cache->clear_page_id( $page_id );
+						// Clear WordPress post cache.
+						clean_post_cache( $post_id );
 					}
 				}
 			}
 
 			// Sync capability if provided in new_pages.
 			if ( ! empty( $capability_map ) ) {
-				$post_name         = get_post_field( 'post_name', $post_id );
-				$prefix_normalized = Manager::normalize_slug( $new_prefix );
+				$post_name = get_post_field( 'post_name', $post_id );
 
-				if ( strpos( $post_name, $prefix_normalized ) === 0 ) {
-					$page_id = substr( $post_name, strlen( $prefix_normalized ) );
+				// Convert prefix to dashes for post_name comparison.
+				$new_prefix_with_dashes = str_replace( '_', '-', $new_prefix );
+				$prefix_with_separator  = $new_prefix_with_dashes . '-';
+
+				if ( strpos( $post_name, $prefix_with_separator ) === 0 ) {
+					// Extract page ID from post name (everything after prefix-).
+					$page_id = substr( $post_name, strlen( $prefix_with_separator ) );
 
 					if ( isset( $capability_map[ $page_id ] ) ) {
 						$new_capability = $capability_map[ $page_id ];

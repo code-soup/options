@@ -12,8 +12,10 @@
 $settings_manager = \CodeSoup\Options\Manager::create(
 	'site_settings',
 	array(
-		'menu_label'  => 'Site Settings',
-		'parent_menu' => 'options-general.php',
+		'menu' => array(
+			'label'  => 'Site Settings',
+			'parent' => 'options-general.php',
+		),
 	)
 );
 
@@ -32,8 +34,10 @@ $settings_manager->init();
 $tools_manager = \CodeSoup\Options\Manager::create(
 	'site_tools',
 	array(
-		'menu_label'  => 'Site Tools',
-		'parent_menu' => 'tools.php',
+		'menu' => array(
+			'label'  => 'Site Tools',
+			'parent' => 'tools.php',
+		),
 	)
 );
 
@@ -52,8 +56,10 @@ $tools_manager->init();
 $theme_manager = \CodeSoup\Options\Manager::create(
 	'theme_options',
 	array(
-		'menu_label'  => 'Theme Options',
-		'parent_menu' => 'themes.php',
+		'menu' => array(
+			'label'  => 'Theme Options',
+			'parent' => 'themes.php',
+		),
 	)
 );
 
@@ -80,9 +86,11 @@ $theme_manager->init();
 $main_manager = \CodeSoup\Options\Manager::create(
 	'main_options',
 	array(
-		'menu_label'    => 'Main Options',
-		'menu_icon'     => 'dashicons-admin-settings',
-		'menu_position' => 50,
+		'menu' => array(
+			'label'    => 'Main Options',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+		),
 	)
 );
 

@@ -1,23 +1,11 @@
 ---
-name: codesoup-options-usage
-description: Retrieve and save WordPress options using CodeSoup Options Manager API. Get single options, bulk options, use in templates. Complete API reference for Manager methods including create, get, save_options, get_options, get_option, register_page, register_pages, register_metabox, can_edit_page, get_config, init. Use when retrieving options in themes or plugins, saving options programmatically, accessing Manager instances, working with options in templates, or understanding the Manager API.
-license: GPL-3.0-or-later
-metadata:
-  author: code-soup
-  version: "1.0.0"
-  package: codesoup/options
+name: CodeSoup Options Usage
+description: Retrieve and save WordPress options using CodeSoup Options Manager API. Get single options, bulk options, use in templates. Complete API reference for Manager methods including create, get, save_options, get_options, get_option, register_page, register_pages, register_metabox, can_edit_page, get_config, init.
 ---
 
 # CodeSoup Options Usage
 
 Retrieve and save WordPress options using the CodeSoup Options Manager API.
-
-## Examples
-
-Complete working examples are available in the `examples/` directory:
-
-- [Retrieving Options](examples/retrieving-options.md) - Get single and bulk options
-- [Saving Options](examples/saving-options.md) - Save with native metaboxes
 
 ## When to Use This Skill
 
@@ -31,17 +19,76 @@ Complete working examples are available in the `examples/` directory:
 
 ### Get All Options for a Page
 
-Returns all options as an array from post_content (fast bulk retrieval). Use `get_options( $page_id )` to retrieve all options at once.
+Returns all options as an array from post_content (fast bulk retrieval):
+
+```php
+use CodeSoup\Options\Manager;
+
+$manager = Manager::get( 'theme_settings' );
+$options = $manager->get_options( 'general' );
+
+$site_logo = $options['site_logo'] ?? '';
+$site_tagline = $options['site_tagline'] ?? '';
+```
 
 ### Get Single Option
 
-Uses ACF's `get_field()` if ACF is enabled, otherwise retrieves from post_content. Use `get_option( $page_id, $field_name, $default )` for single values.
+Uses ACF's `get_field()` if ACF is enabled, otherwise retrieves from post_content:
+
+```php
+$manager = Manager::get( 'theme_settings' );
+
+// Get single field
+$logo_id = $manager->get_option( 'general', 'site_logo' );
+
+// With default value
+$footer_text = $manager->get_option( 'footer', 'copyright', '© 2024' );
+```
 
 ### Using in Templates
 
-Options can be retrieved in header.php, footer.php, or any template file using `Manager::get()` to access the Manager instance.
+**In header.php:**
 
-**See:** [Retrieving Options Example](examples/retrieving-options.md) for complete code examples including bulk retrieval, single options, template usage, helper functions, and conditional display patterns.
+```php
+use CodeSoup\Options\Manager;
+
+$settings = Manager::get( 'theme_settings' );
+
+// Display logo
+$logo_id = $settings->get_option( 'header', 'logo' );
+if ( $logo_id ) {
+	echo wp_get_attachment_image( $logo_id, 'full' );
+}
+```
+
+**In footer.php:**
+
+```php
+use CodeSoup\Options\Manager;
+
+$settings = Manager::get( 'theme_settings' );
+
+// Display social links
+$facebook = $settings->get_option( 'social', 'facebook_url' );
+if ( $facebook ) {
+	printf( '<a href="%s">Facebook</a>', esc_url( $facebook ) );
+}
+
+// Display copyright
+$copyright = $settings->get_option( 'footer', 'copyright_text', '© ' . gmdate( 'Y' ) );
+echo esc_html( $copyright );
+```
+
+**In functions.php or plugin:**
+
+```php
+use CodeSoup\Options\Manager;
+
+function get_site_contact_email() {
+	$manager = Manager::get( 'site_settings' );
+	return $manager->get_option( 'general', 'contact_email', get_option( 'admin_email' ) );
+}
+```
 
 ## Saving Options
 
@@ -51,9 +98,75 @@ ACF handles saving automatically. No save handlers needed.
 
 ### With Native Metaboxes
 
-Use `save_options()` method in a `save_post` hook. Always sanitize data before saving using appropriate sanitization functions (sanitize_text_field, sanitize_email, sanitize_url, absint, wp_kses_post).
+Use `save_options()` method in a `save_post` hook:
 
-**See:** [Saving Options Example](examples/saving-options.md) for complete save_post hook implementation, data sanitization, error handling, and programmatic saving.
+```php
+use CodeSoup\Options\Manager;
+
+add_action( 'save_post', function( $post_id ) {
+	$manager = Manager::get( 'site_settings' );
+
+	// Only process your post type
+	if ( get_post_type( $post_id ) !== $manager->get_config( 'post_type' ) ) {
+		return;
+	}
+
+	// Check autosave
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+
+	// Verify user has permission
+	if ( ! $manager->can_edit_page( $post_id ) ) {
+		return;
+	}
+
+	// Check if fields exist
+	if ( ! isset( $_POST['site_title'], $_POST['_wpnonce'] ) ) {
+		return;
+	}
+
+	// CRITICAL: Always sanitize data
+	$data = array(
+		'site_title'       => sanitize_text_field( $_POST['site_title'] ?? '' ),
+		'site_email'       => sanitize_email( $_POST['site_email'] ?? '' ),
+		'site_description' => sanitize_textarea_field( $_POST['site_description'] ?? '' ),
+		'site_url'         => sanitize_url( $_POST['site_url'] ?? '' ),
+		'posts_per_page'   => absint( $_POST['posts_per_page'] ?? 10 ),
+		'welcome_message'  => wp_kses_post( $_POST['welcome_message'] ?? '' ),
+	);
+
+	// Save - returns WP_Error on failure
+	$result = $manager->save_options(
+		array(
+			'post_id' => $post_id,
+			'nonce'   => $_POST['_wpnonce'],
+			'data'    => $data,
+		)
+	);
+
+	if ( is_wp_error( $result ) ) {
+		$manager->get_logger()->error( 'Failed to save options: ' . $result->get_error_message() );
+
+		// Show admin notice
+		add_action( 'admin_notices', function() use ( $result ) {
+			printf(
+				'<div class="notice notice-error"><p>%s</p></div>',
+				esc_html( $result->get_error_message() )
+			);
+		} );
+	}
+} );
+```
+
+**Sanitization Functions:**
+
+- `sanitize_text_field()` - Single-line text
+- `sanitize_textarea_field()` - Multi-line text
+- `sanitize_email()` - Email addresses
+- `sanitize_url()` - URLs
+- `absint()` - Positive integers
+- `wp_kses_post()` - HTML content
 
 ## Manager API Reference
 
@@ -77,9 +190,11 @@ Create a new manager instance.
 $manager = Manager::create(
 	'theme_settings',
 	array(
-		'menu_label'    => 'Theme Settings',
-		'menu_icon'     => 'dashicons-admin-appearance',
-		'menu_position' => 60,
+		'menu' => array(
+			'label'    => 'Theme Settings',
+			'icon'     => 'dashicons-admin-appearance',
+			'position' => 60,
+		),
 	)
 );
 ```
@@ -126,7 +241,6 @@ Save options data for native metaboxes. Data is serialized and stored in post_co
 - Nonce verification fails
 - User lacks permission to edit the post
 - Post update fails
-- Cache key exceeds maximum length (172 characters)
 
 **Example:**
 
@@ -140,7 +254,7 @@ $result = $manager->save_options(
 );
 
 if ( is_wp_error( $result ) ) {
-	error_log( 'Save failed: ' . $result->get_error_message() );
+	$manager->get_logger()->error( 'Save failed: ' . $result->get_error_message() );
 }
 ```
 
@@ -285,13 +399,13 @@ Get the manager configuration.
 **Examples:**
 
 ```php
-// Get full config
+// Get full config array
 $config = $manager->get_config();
 
-// Get specific value
-$post_type = $manager->get_config( 'post_type' );
-$menu_label = $manager->get_config( 'menu_label' );
-$debug = $manager->get_config( 'debug' );
+// Access nested config values
+$post_type  = $config['post_type'];
+$menu_label = $config['menu']['label'];
+$debug      = $config['debug'];
 ```
 
 ---
@@ -527,8 +641,8 @@ array(
 
 **Important:**
 - Don't use `update_post_meta()` - Use `Manager::save_options()` instead
-- Data is cached for performance (default: 1 hour)
-- Cache is automatically invalidated on save
+- Data is stored as serialized array in post_content
+- WordPress object cache (if enabled) may cache the data
 
 ## Performance Tips
 
@@ -544,7 +658,7 @@ array(
    $email = $manager->get_option( 'general', 'site_email' );
    ```
 
-2. **Cache manager instances** in your code:
+2. **Reuse manager instances** in your code:
    ```php
    // Good - Get once
    $manager = Manager::get( 'theme_settings' );
@@ -556,23 +670,12 @@ array(
    $menu = Manager::get( 'theme_settings' )->get_option( 'header', 'menu' );
    ```
 
-3. **Adjust cache duration** for your needs:
-   ```php
-   Manager::create(
-   	'theme_settings',
-   	array(
-   		'cache_duration' => DAY_IN_SECONDS, // Cache for 24 hours
-   	)
-   );
-   ```
-
 ## Troubleshooting
 
 **Options returning empty:**
 - Verify manager instance exists: `Manager::get( 'key' )` returns non-null
 - Check page ID matches registered page
 - Verify data was saved (check post_content in database)
-- Clear WordPress object cache
 
 **ACF fields not retrieving:**
 - Verify ACF is installed and active
@@ -583,11 +686,11 @@ array(
 - Check `save_options()` return value for WP_Error
 - Verify nonce is valid
 - Check user has required capability
-- Review error_log for messages (enable debug mode)
+- Review logs via Logger class (enable debug mode in config)
 
 **Performance issues:**
 - Use `get_options()` for bulk retrieval instead of multiple `get_option()` calls
-- Increase cache duration if options don't change frequently
+- Enable WordPress object cache (Redis, Memcached) for better performance
 - Check for excessive Manager::get() calls in loops
 
 

@@ -1,39 +1,26 @@
 # CodeSoup Options
 
-**Version 1.0.0** - WordPress options manager using custom post types with built-in ACF integration.
+**Version 1.1.0** - WordPress options manager using custom post types with built-in ACF integration.
 
 Manage WordPress options using custom post types instead of the wp_options table. Includes built-in Advanced Custom Fields integration and can be extended to use with any field framework (CMB2, MetaBox.io, Carbon Fields) or native metaboxes.
 
-## AI Skills Available via Skillshare
+![CodeSoup Options Preview](assets/media/codesoup-options-preview.png)
 
-This package includes AI agent skills that can be installed via Skillshare:
+## Features
 
-```bash
-# Install all skills
-skillshare install code-soup/codesoup-options --all && skillshare sync
-
-# Or install specific skills
-skillshare install code-soup/codesoup-options -s codesoup-options-setup,codesoup-options-usage
-```
-
-**Available skills:**
-- **codesoup-options-setup** - Set up and configure the plugin
-- **codesoup-options-usage** - Retrieve and save options using the API
-- **codesoup-options-migration** - Migrate configurations
-
-See [SKILLSHARE.md](SKILLSHARE.md) for detailed installation instructions and [skills/README.md](skills/README.md) for skill documentation.
-
-## Why Custom Post Types?
-
+- **Tabbed UI** - Organize options in tabs with horizontal or vertical layouts
+- **Automatic Capabilities** - Post type and custom page capabilities automatically added to administrator role
 - **Revision History** - Track changes over time
 - **Post Locking** - Prevent concurrent edits
 - **Better Organization** - Multiple option pages with capability control
 - **Built-in ACF Integration** - Works out of the box with Advanced Custom Fields
+- **CodeSoup Metabox Schema** - Designed to work with [CodeSoup Metabox Schema](https://github.com/code-soup/metabox-schema) for declarative form generation
 - **Extensible** - Can be extended to use with CMB2, MetaBox.io, Carbon Fields, or native metaboxes
+- **Two UI Modes** - Choose between traditional pages mode or tabbed interface
 
 ## Requirements
 
-- PHP >= 7.2
+- PHP >= 7.4
 - WordPress >= 6.0
 - Optional: ACF, CMB2, MetaBox.io, or Carbon Fields
 
@@ -120,6 +107,7 @@ $logo = Manager::get( 'theme_settings' )->get_option( 'general', 'site_logo' );
 ## Documentation
 
 - **[Examples](docs/examples/)** - Working code examples
+- **[Tabbed UI](docs/tabbed-ui.md)** - Modern tabbed interface
 - **[Native Metaboxes](docs/native.md)** - Using without any framework
 - **[ACF Integration](docs/acf.md)** - Using with Advanced Custom Fields
 - **[Custom Integrations](docs/custom-integrations.md)** - CMB2, MetaBox.io, Carbon Fields
@@ -128,22 +116,7 @@ $logo = Manager::get( 'theme_settings' )->get_option( 'general', 'site_logo' );
 
 ## Agent Skills
 
-AI-optimized documentation for agents is available in the `skills/` directory.
-
-**Quick Install with Skillshare:**
-
-```bash
-# Install all skills globally
-skillshare install code-soup/codesoup-options --all && skillshare sync
-
-# Or install to project only
-skillshare install code-soup/codesoup-options --all -p && skillshare sync
-```
-
-**Documentation:**
-
-- **[SKILLSHARE.md](SKILLSHARE.md)** - Skillshare installation and usage guide
-- **[skills/README.md](skills/README.md)** - Detailed skills documentation
+AI-optimized documentation for agents is available in the `skills/` directory. See **[skills/README.md](skills/README.md)** for installation and usage.
 
 ## Configuration
 
@@ -151,15 +124,35 @@ skillshare install code-soup/codesoup-options --all -p && skillshare sync
 Manager::create(
 	'instance_key',
 	array(
+		// Core settings
 		'post_type'      => 'custom_options',
 		'prefix'         => 'custom_',
-		'menu_label'     => 'Settings',
-		'menu_icon'      => 'dashicons-admin-settings',
-		'menu_position'  => 50,
-		'parent_menu'    => null,
 		'revisions'      => true,
-		'cache_duration' => HOUR_IN_SECONDS,
 		'debug'          => false,
+
+		// Menu configuration
+		'menu'           => array(
+			'label'    => 'Settings',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+			'parent'   => null,
+		),
+
+		// UI configuration
+		'ui'             => array(
+			'mode'          => 'pages',  // 'pages' or 'tabs' (see docs/tabbed-ui.md)
+			'tab_position'  => 'top',    // 'top' or 'left' (tabs mode only)
+			'templates_dir' => null,     // Custom templates directory path
+		),
+
+		// Assets configuration
+		'assets'         => array(
+			'disable_styles'  => false,  // Disable plugin styles
+			'disable_scripts' => false,  // Disable plugin scripts
+			'disable_branding' => false, // Disable CodeSoup branding header
+		),
+
+		// Integrations
 		'integrations'   => array(
 			'acf' => array(
 				'enabled' => true,
@@ -170,11 +163,13 @@ Manager::create(
 );
 ```
 
+**Note:** The old flat configuration structure triggers deprecation warnings. See [Migration Guide](docs/migration-v1.1.md) to upgrade.
+
 ## License
 
 GPL-3.0+
 
 ## Support
 
-- **Issues:** GitHub Issues
-- **Website:** codesoup.co
+- **Issues:** [GitHub Issues](https://github.com/codesoup/options/issues)
+- **Website:** [codesoup.co](https://www.codesoup.co)

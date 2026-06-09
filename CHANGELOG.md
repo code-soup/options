@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-06-09
+
+### Breaking Changes
+
+- **Configuration structure changed to nested groups** - Old flat structure deprecated but supported via backward compatibility layer
+- **Cache system removed** - Plugin no longer implements internal caching, options read directly from database
+
+### Added
+
+- Tabbed UI mode for organizing options pages
+- Automatic capability management - adds post type and custom page capabilities to administrator role
+- `Path_Helper` and `Security_Helper` utility classes
+- `Admin_Notice` utility class
+- `get_metabox_registry()` and `get_template_path()` methods to Manager class
+- `Post_Manager::regenerate_capabilities()` method to force capability refresh
+- `disable_branding` and `templates_dir` config options
+- Backward compatibility layer for old configuration structure
+- Validation for metabox page ID matching
+
+### Changed
+
+- Refactored configuration into logical groups (menu, ui, assets)
+- Simplified data retrieval without internal cache layer
+
+### Removed
+
+- Cache system (`includes/core/class-cache.php`)
+- `cache_duration` configuration option
+
+### Migration
+
+See [docs/migration-v1.1.md](docs/migration-v1.1.md) for upgrade guide. Existing code will continue to work but will show deprecation warnings until migrated.
+
 ## [1.0.1] - 2026-03-01
 
 ### Fixed

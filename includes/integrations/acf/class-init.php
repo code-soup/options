@@ -114,10 +114,15 @@ class Init implements IntegrationInterface {
 	 * @return void
 	 */
 	public function show_acf_missing_notice(): void {
-		printf(
-			'<div class="notice notice-error"><p><strong>%s:</strong> %s</p></div>',
+		$message = sprintf(
+			'<strong>%s:</strong> %s',
 			esc_html__( 'ACF Options Manager', 'codesoup-options' ),
 			esc_html__( 'Advanced Custom Fields plugin is required. Please install and activate ACF.', 'codesoup-options' )
+		);
+
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
 		);
 	}
 
@@ -132,7 +137,8 @@ class Init implements IntegrationInterface {
 		}
 
 		$instance_key = $this->manager->get_instance_key();
-		$class_name   = Location::create_for_instance( $instance_key, $this->manager->get_config( 'menu_label' ) );
+		$config       = $this->manager->get_config();
+		$class_name   = Location::create_for_instance( $instance_key, $config['menu']['label'] );
 
 		acf_register_location_type( $class_name );
 	}
@@ -159,10 +165,11 @@ class Init implements IntegrationInterface {
 		}
 
 		// Defensive nonce verification (ACF should handle this, but verify anyway).
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- ACF handles nonce, this is defensive check.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Checked on next line.
 		if ( isset( $_POST['acf'] ) && ! empty( $_POST['_wpnonce'] ) ) {
 			// Verify ACF nonce if present.
-			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'update-post_' . $post_id ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in wp_verify_nonce.
+			if ( ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'update-post_' . $post_id ) ) {
 				$this->manager->get_logger()->warning(
 					sprintf(
 						/* translators: %d: post ID */
@@ -227,7 +234,8 @@ class Init implements IntegrationInterface {
 			return;
 		}
 
-		$this->manager->invalidate_cache( $post_id );
+		// Clear WordPress post cache.
+		clean_post_cache( $post_id );
 	}
 
 	/**

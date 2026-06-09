@@ -79,11 +79,12 @@ class Autoloader {
 	 *
 	 * Transformation steps:
 	 * 1. Remove namespace prefix: CodeSoup\Options\Manager → Manager
-	 * 2. Convert namespace separators: Integrations\ACF\Init → Integrations/ACF/Init
-	 * 3. Convert PascalCase to kebab-case: IntegrationInterface → integration-interface
-	 * 4. Convert to lowercase: Manager → manager
-	 * 5. Add class- prefix (except for interfaces): manager → class-manager
-	 * 6. Add .php extension: class-manager → class-manager.php
+	 * 2. Map to subdirectory: Admin_Page → admin/Admin_Page
+	 * 3. Convert namespace separators: Integrations\ACF\Init → Integrations/ACF/Init
+	 * 4. Convert PascalCase to kebab-case: IntegrationInterface → integration-interface
+	 * 5. Convert to lowercase: Manager → manager
+	 * 6. Add class- prefix (except for interfaces): manager → class-manager
+	 * 7. Add .php extension: class-manager → class-manager.php
 	 *
 	 * @param string $class_name Fully qualified class name.
 	 * @return string File path.
@@ -92,8 +93,36 @@ class Autoloader {
 		// Remove namespace prefix.
 		$relative_class = str_replace( self::NAMESPACE_PREFIX, '', $class_name );
 
+		// Map core classes to subdirectories.
+		$class_mapping = array(
+			'Logger'              => 'core/Logger',
+			'Page'                => 'core/Page',
+			'Metabox'             => 'core/Metabox',
+			'Post_Manager'        => 'core/Post_Manager',
+			'Hook_Registry'       => 'core/Hook_Registry',
+			'Metabox_Registry'    => 'core/Metabox_Registry',
+			'Integration_Manager' => 'core/Integration_Manager',
+			'Admin_Header'        => 'admin/Admin_Header',
+			'Admin_Page'          => 'admin/Admin_Page',
+			'Form_Handler'        => 'admin/Form_Handler',
+			'Pages_List_Page'     => 'admin/Pages_List_Page',
+			'Pages_List_Table'    => 'admin/Pages_List_Table',
+			'Admin_Notice'        => 'utilities/Admin_Notice',
+			'Config_Helper'       => 'utilities/Config_Helper',
+			'Path_Helper'         => 'utilities/Path_Helper',
+			'Security_Helper'     => 'utilities/Security_Helper',
+			'Migration'           => 'utilities/Migration',
+		);
+
+		if ( isset( $class_mapping[ $relative_class ] ) ) {
+			$relative_class = $class_mapping[ $relative_class ];
+		}
+
 		// Convert namespace separators to directory separators.
 		$relative_class = str_replace( '\\', '/', $relative_class );
+
+		// Convert underscores to dashes (WordPress naming convention).
+		$relative_class = str_replace( '_', '-', $relative_class );
 
 		// Convert PascalCase to kebab-case before lowercasing.
 		// This regex finds lowercase letter followed by uppercase letter and inserts a dash.

@@ -124,7 +124,6 @@ ACF handles saving automatically. You don't need to create save handlers.
 **Field groups not showing:**
 - Verify ACF is installed and active
 - Check location rules match your page ID exactly
-- Clear WordPress object cache
 
 **Options not saving:**
 - Check user has required capability

@@ -103,7 +103,7 @@ $site_email       = $options['site_email'] ?? '';
  *     try {
  *         $manager->save_options( $post_id, $data );
  *     } catch ( \InvalidArgumentException $e ) {
- *         error_log( 'Failed to save options: ' . $e->getMessage() );
+ *         $manager->get_logger()->error( 'Failed to save options: ' . $e->getMessage() );
  *     }
  * }, 10, 1 );
  */
