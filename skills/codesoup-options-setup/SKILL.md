@@ -765,11 +765,11 @@ $settings_manager->init();
 
 Capabilities are automatically added to the administrator role:
 
-**Post Type Capabilities:** 13 standard WordPress capabilities for the custom post type (edit, delete, publish, etc.)
+**Post Type Capabilities:** 13 standard WordPress capabilities for the custom post type (edit, delete, publish, etc.) - added once per post type
 
-**Custom Page Capabilities:** Unique capabilities from page configurations (e.g., `manage_navigation`, `manage_footer_disclosure`)
+**Page Capabilities:** All unique capabilities from all pages in the instance - added once per instance
 
-**Automatic Detection:** Standard WordPress capabilities like `manage_options` and `edit_pages` are skipped since admin already has them.
+**Validation:** Capabilities validated for proper format (alphanumeric and underscores only)
 
 **Force Regeneration:**
 ```php

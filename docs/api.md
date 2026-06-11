@@ -590,9 +590,9 @@ Post_Manager::regenerate_capabilities();
 
 **How it works:**
 - Post type capabilities (13 standard WordPress caps) added automatically on `register_post_type()`
-- Custom page capabilities (from page config) added automatically on `ensure_pages_exist()`
-- Standard WordPress capabilities (like `manage_options`, `edit_pages`) skipped - admin already has them
-- Uses `wp_options` to track which capabilities have been added
+- Page capabilities added automatically on `ensure_pages_exist()` - collects all unique capabilities from all pages in instance
+- Capabilities validated for proper format (alphanumeric and underscores only)
+- Uses `wp_options` to track which capabilities have been added per post type and per instance
 - Call `regenerate_capabilities()` to clear flags and force re-check
 
 ---

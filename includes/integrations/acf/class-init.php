@@ -197,38 +197,33 @@ class Init implements IntegrationInterface {
 
 		$serialized = maybe_serialize( $fields );
 
-		remove_action(
-			'acf/save_post',
-			array(
-				$this,
-				'save_options',
-			),
-			20
-		);
+		// Use direct database update to avoid WordPress content filtering
+		// which corrupts serialized data containing HTML/JavaScript.
+		// This matches the approach used in Manager::save_options().
+		global $wpdb;
 
-		$result = wp_update_post(
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Intentional to prevent content filtering corruption.
+		$result = $wpdb->update(
+			$wpdb->posts,
 			array(
-				'ID'           => $post_id,
 				'post_content' => $serialized,
 			),
-			true
-		);
-
-		add_action(
-			'acf/save_post',
 			array(
-				$this,
-				'save_options',
+				'ID' => $post_id,
 			),
-			20
+			array(
+				'%s',
+			),
+			array(
+				'%d',
+			)
 		);
 
-		if ( is_wp_error( $result ) ) {
+		if ( false === $result ) {
 			$this->manager->get_logger()->error(
 				sprintf(
-					'Failed to save options for post %d: %s',
-					$post_id,
-					$result->get_error_message()
+					'Failed to save options for post %d',
+					$post_id
 				)
 			);
 			return;
