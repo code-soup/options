@@ -152,49 +152,15 @@ class Post_Manager {
 		$instance_key = $this->manager->get_instance_key();
 		$option_key   = sprintf( self::OPTION_PREFIX_PAGE_CAPS, $instance_key );
 
-		// Collect unique custom capabilities from all pages.
-		$custom_capabilities = array();
-		$standard_caps       = array(
-			'manage_options',
-			'edit_posts',
-			'edit_pages',
-			'edit_published_posts',
-			'edit_published_pages',
-			'publish_posts',
-			'publish_pages',
-			'read',
-		);
+		// Collect unique capabilities from all pages.
+		$capabilities = array();
 
 		foreach ( $pages as $page ) {
-			$capability = $page->capability;
-
-			// Skip standard WordPress capabilities that admin already has.
-			if ( in_array( $capability, $standard_caps, true ) ) {
-				continue;
-			}
-
-			// Skip post type capabilities (handled separately).
-			$post_type = $this->manager->get_post_type();
-			$singular  = rtrim( $post_type, 's' );
-			$plural    = $post_type;
-
-			if (
-				strpos( $capability, 'edit_' . $singular ) === 0
-				|| strpos( $capability, 'edit_' . $plural ) === 0
-				|| strpos( $capability, 'delete_' . $singular ) === 0
-				|| strpos( $capability, 'delete_' . $plural ) === 0
-				|| strpos( $capability, 'read_' . $singular ) === 0
-				|| strpos( $capability, 'read_' . $plural ) === 0
-				|| strpos( $capability, 'publish_' . $plural ) === 0
-			) {
-				continue;
-			}
-
-			$custom_capabilities[ $capability ] = true;
+			$capabilities[ $page->capability ] = true;
 		}
 
-		if ( empty( $custom_capabilities ) ) {
-			// Store flag even if no custom capabilities to prevent re-checking.
+		if ( empty( $capabilities ) ) {
+			// Store flag even if no capabilities to prevent re-checking.
 			if ( false === get_option( $option_key, false ) ) {
 				update_option( $option_key, 1, false );
 			}
@@ -203,9 +169,9 @@ class Post_Manager {
 
 		$this->add_capabilities_to_role(
 			'administrator',
-			array_keys( $custom_capabilities ),
+			array_keys( $capabilities ),
 			$option_key,
-			sprintf( 'instance: %s (%s)', $instance_key, implode( ', ', array_keys( $custom_capabilities ) ) )
+			sprintf( 'instance: %s (%s)', $instance_key, implode( ', ', array_keys( $capabilities ) ) )
 		);
 	}
 
@@ -558,8 +524,7 @@ class Post_Manager {
 	/**
 	 * Force capability regeneration
 	 *
-	 * Sets a marker to clear and regenerate all capabilities.
-	 * Capabilities will be regenerated on next page load.
+	 * Clears all capability flags to force re-check on next init.
 	 *
 	 * Usage:
 	 * ```php
@@ -569,7 +534,6 @@ class Post_Manager {
 	 * @return void
 	 */
 	public static function regenerate_capabilities(): void {
-		update_option( 'codesoup_options_flush_caps', 1, false );
 		self::clear_all_capability_flags();
 	}
 }
