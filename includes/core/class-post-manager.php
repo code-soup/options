@@ -241,7 +241,6 @@ class Post_Manager {
 	private function is_relevant_screen( \WP_Screen $screen ): bool {
 		$post_type = $this->manager->get_post_type();
 		$config    = $this->manager->get_config();
-		$screen_id = str_replace('toplevel_page_', '', $screen->id);
 
 		// Check for post type screens (edit list and single post edit)
 		if (
@@ -257,7 +256,7 @@ class Post_Manager {
 			$admin_page = $this->manager->get_admin_page();
 
 			if ( $admin_page
-				&& $screen_id === $admin_page->get_screen_id()
+				&& $screen->id === $admin_page->get_screen_id()
 			) {
 				return true;
 			}
@@ -267,10 +266,10 @@ class Post_Manager {
 		if ( 'pages' === $config['ui']['mode'] )
 		{
 			$pages_list_page = $this->manager->get_pages_list_page();
-			
+
 			if (
 				$pages_list_page
-				&& $screen_id === $pages_list_page->get_screen_id()
+				&& $screen->id === $pages_list_page->get_screen_id()
 			) {
 				return true;
 			}

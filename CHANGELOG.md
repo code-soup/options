@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-06-27
+
+### Fixed
+
+- Fixed screen ID generation for WordPress admin pages to correctly handle both top-level and submenu pages
+- Fixed screen matching logic in `Post_Manager::is_relevant_screen()` to work with updated screen IDs
+
 ## [1.1.0] - 2026-06-09
 
 ### Breaking Changes

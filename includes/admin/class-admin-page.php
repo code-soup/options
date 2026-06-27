@@ -74,10 +74,13 @@ class Admin_Page {
 		$page_slug = $this->get_page_slug();
 
 		if ( ! empty( $config['menu']['parent'] ) ) {
+			// Submenu page: parent_page_slug
 			return $config['menu']['parent'] . '_page_' . $page_slug;
 		}
 
-		return $page_slug;
+		// Top-level menu page: toplevel_page_slug
+		// WordPress automatically prefixes top-level menu pages with 'toplevel_page_'
+		return 'toplevel_page_' . $page_slug;
 	}
 
 	/**
