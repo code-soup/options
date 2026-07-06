@@ -485,10 +485,11 @@ your-templates-dir/
 
 ```php
 array(
-	'id'          => 'general',           // Required: Unique page ID (sanitized with sanitize_key)
-	'title'       => 'General Settings',  // Required: Page title
-	'capability'  => 'manage_options',    // Required: User capability
-	'description' => 'Site settings',     // Optional: Page description (stored in post_excerpt)
+	'id'               => 'general',           // Required: Unique page ID (sanitized with sanitize_key)
+	'title'            => 'General Settings',  // Required: Page title
+	'capability'       => 'manage_options',    // Required: User capability
+	'description'      => 'Site settings',     // Optional: Page description (stored in post_excerpt)
+	'hide_save_button' => false,               // Optional: Hide save button (default: false)
 )
 ```
 
@@ -502,6 +503,11 @@ array(
 - The `description` field is optional and stored in the WordPress `post_excerpt` field
 - Useful for adding context or notes about the page's purpose
 - Can be retrieved using standard WordPress functions like `get_post_field( 'post_excerpt', $post_id )`
+
+**Hide Save Button:**
+- Set `hide_save_button` to `true` to hide the save button for a specific page
+- Useful for read-only pages or pages with custom save handlers
+- Default: `false` (save button is shown)
 
 ---
 

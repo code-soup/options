@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || die;
  * Plugin Name:       CodeSoup Options
  * Plugin URI:        https://www.codesoup.co
  * Description:       Framework-agnostic WordPress options manager using custom post types to store data. Supports multiple instances, ACF, custom metaboxes, and extensible integrations.
- * Version:           1.1.1
+ * Version:           1.2.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Code Soup

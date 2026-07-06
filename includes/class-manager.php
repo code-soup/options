@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || die;
  * @see https://github.com/code-soup/codesoup-options/blob/main/docs/api.md API Reference
  *
  * @since 1.0.0
- * @version 1.1.1
+ * @version 1.2.2
  */
 class Manager {
 
@@ -901,6 +901,16 @@ class Manager {
 	 */
 	public function get_pages(): array {
 		return $this->pages;
+	}
+
+	/**
+	 * Get a single page by ID
+	 *
+	 * @param string $page_id Page identifier.
+	 * @return Page|null Page object or null if not found.
+	 */
+	public function get_page( string $page_id ): ?Page {
+		return $this->pages[ $page_id ] ?? null;
 	}
 
 	/**

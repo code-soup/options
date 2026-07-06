@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2026-07-06
+
+### Added
+
+- `hide_save_button` page configuration option to hide save button per page
+
+### Fixed
+
+- Fixed screen ID generation for top-level and submenu admin pages
+- Fixed screen matching logic in `Post_Manager::is_relevant_screen()`
+
 ## [1.1.1] - 2026-06-27
 
 ### Fixed

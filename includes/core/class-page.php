@@ -48,6 +48,13 @@ class Page {
 	public readonly ?string $description;
 
 	/**
+	 * Hide save button
+	 *
+	 * @var bool
+	 */
+	public readonly bool $hide_save_button;
+
+	/**
 	 * Constructor
 	 *
 	 * @param array $args Page arguments.
@@ -72,11 +79,12 @@ class Page {
 			);
 		}
 
-		$this->id          = sanitize_key( $args['id'] );
-		$this->title       = sanitize_text_field( $args['title'] );
-		$this->capability  = sanitize_key( $args['capability'] );
-		$this->description = isset( $args['description'] )
+		$this->id               = sanitize_key( $args['id'] );
+		$this->title            = sanitize_text_field( $args['title'] );
+		$this->capability       = sanitize_key( $args['capability'] );
+		$this->description      = isset( $args['description'] )
 			? sanitize_text_field( $args['description'] )
 			: null;
+		$this->hide_save_button = $args['hide_save_button'] ?? false;
 	}
 }

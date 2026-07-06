@@ -133,31 +133,8 @@ class Metabox_Registry {
 			return;
 		}
 
-		// Remove default submitdiv.
-		remove_meta_box(
-			'submitdiv',
-			$config['post_type'],
-			'side'
-		);
-
-		// Add custom actions metabox.
-		$actions_metabox = new Metabox(
-			array(
-				'page'     => 'all',
-				'title'    => __( 'Actions', 'codesoup-options' ),
-				'path'     => dirname( __DIR__ ) . '/templates/metabox/actions.php',
-				'context'  => 'side',
-				'priority' => 'high',
-				'args'     => array(
-					'manager' => $this->manager,
-				),
-			)
-		);
-
-		$actions_metabox->register(
-			sprintf( '%s_actions', $this->manager->get_instance_key() ),
-			$config['post_type']
-		);
+		// Register actions metabox conditionally.
+		$this->register_actions_metabox();
 
 		if ( empty( $this->metaboxes ) ) {
 			return;
@@ -237,6 +214,54 @@ class Metabox_Registry {
 				sprintf( '%s_%s', $this->manager->get_instance_key(), $metabox->page ),
 				$admin_page->get_screen_id(),
 				$metabox_args
+			);
+		}
+	}
+
+	/**
+	 * Register actions metabox (save button)
+	 *
+	 * Only registers if current page doesn't have hide_save_button set to true.
+	 *
+	 * @return void
+	 */
+	private function register_actions_metabox(): void {
+		global $post;
+		$config = $this->manager->get_config();
+
+		// Remove default submitdiv.
+		remove_meta_box(
+			'submitdiv',
+			$config['post_type'],
+			'side'
+		);
+
+		// Get current page
+		$page = null;
+		if ( $post ) {
+			$post_manager = $this->manager->get_post_manager();
+			$page_id      = $post_manager->extract_page_id_from_post_name( $post->post_name );
+			$page         = $this->manager->get_page( $page_id );
+		}
+
+		// Only add Actions metabox if page doesn't hide it.
+		if ( ! $page || ! $page->hide_save_button ) {
+			$actions_metabox = new Metabox(
+				array(
+					'page'     => 'all',
+					'title'    => __( 'Actions', 'codesoup-options' ),
+					'path'     => dirname( __DIR__ ) . '/templates/metabox/actions.php',
+					'context'  => 'side',
+					'priority' => 'high',
+					'args'     => array(
+						'manager' => $this->manager,
+					),
+				)
+			);
+
+			$actions_metabox->register(
+				sprintf( '%s_actions', $this->manager->get_instance_key() ),
+				$config['post_type']
 			);
 		}
 	}

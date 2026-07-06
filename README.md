@@ -1,6 +1,6 @@
 # CodeSoup Options
 
-**Version 1.1.0** - WordPress options manager using custom post types with built-in ACF integration.
+**Version 1.2.2** - WordPress options manager using custom post types with built-in ACF integration.
 
 Manage WordPress options using custom post types instead of the wp_options table. Includes built-in Advanced Custom Fields integration and can be extended to use with any field framework (CMB2, MetaBox.io, Carbon Fields) or native metaboxes.
 

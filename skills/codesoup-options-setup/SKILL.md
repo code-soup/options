@@ -618,10 +618,11 @@ $manager->init();
 
 ```php
 array(
-	'id'          => 'general',           // Required: Unique page ID
-	'title'       => 'General Settings',  // Required: Page title
-	'capability'  => 'manage_options',    // Required: User capability
-	'description' => 'Site settings',     // Optional: Page description (stored in post_excerpt)
+	'id'               => 'general',           // Required: Unique page ID
+	'title'            => 'General Settings',  // Required: Page title
+	'capability'       => 'manage_options',    // Required: User capability
+	'description'      => 'Site settings',     // Optional: Page description (stored in post_excerpt)
+	'hide_save_button' => false,               // Optional: Hide save button (default: false)
 )
 ```
 
