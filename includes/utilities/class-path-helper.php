@@ -32,23 +32,60 @@ class Path_Helper {
 	/**
 	 * Get plugin base URL
 	 *
-	 * Uses WordPress plugins_url() for reliable path-to-URL conversion.
-	 * Works with regular composer packages, scoped packages, and symlinked directories.
+	 * Detects installation type and generates correct URL:
+	 * - Standalone plugin: uses index.php
+	 * - Vendor package: uses __FILE__ navigation
+	 * - Scoped vendor: uses __FILE__ navigation
 	 *
 	 * @return string Base URL of the plugin.
 	 */
 	public static function get_base_url(): string {
-		return plugins_url( '', dirname( dirname( __DIR__ ) ) );
+		$package_root = dirname( dirname( __DIR__ ) );
+
+		// Detect installation type by checking path
+		if ( self::is_standalone_plugin( $package_root ) ) {
+			// Standalone plugin - use index.php
+			return plugins_url( '', $package_root . '/index.php' );
+		}
+
+		// Vendor package (regular or scoped) - use __FILE__ navigation
+		// plugins_url('', __FILE__) returns parent directory of this file
+		$base_url = plugins_url( '', __FILE__ );
+		return dirname( dirname( $base_url ) );
+	}
+
+	/**
+	 * Detect if installed as standalone plugin
+	 *
+	 * @param string $package_root Package root path.
+	 * @return bool True if standalone plugin, false if vendor package.
+	 */
+	private static function is_standalone_plugin( string $package_root ): bool {
+		// Check if path contains 'vendor' directory
+		// Standalone: /plugins/codesoup-options/
+		// Vendor:     /plugins/my-plugin/vendor/codesoup/options/
+		// Scoped:     /plugins/my-plugin/vendor-prefixed/codesoup/options/
+		return strpos( $package_root, '/vendor' ) === false;
 	}
 
 	/**
 	 * Get asset URL
 	 *
+	 * Generates URL to an asset file (CSS, JS, images).
+	 *
 	 * @param string $relative_path Relative path to asset (e.g., 'css/admin.css').
 	 * @return string Full URL to asset.
 	 */
 	public static function get_asset_url( string $relative_path ): string {
-		return plugins_url( 'assets/' . ltrim( $relative_path, '/' ), dirname( dirname( __DIR__ ) ) );
+		$package_root = dirname( dirname( __DIR__ ) );
+		$asset_path   = 'assets/' . ltrim( $relative_path, '/' );
+
+		if ( self::is_standalone_plugin( $package_root ) ) {
+			return plugins_url( $asset_path, $package_root . '/index.php' );
+		}
+
+		// Vendor package - construct from base URL
+		return self::get_base_url() . '/' . $asset_path;
 	}
 
 	/**

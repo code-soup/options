@@ -93,10 +93,12 @@ class Admin_Header {
 			return;
 		}
 
-		// Get logo URL using WordPress plugins_url() for reliable path-to-URL conversion
+		// Get logo URL using Path_Helper
+		$default_logo_url = Path_Helper::get_asset_url( 'media/code-soup-logo.jpg' );
+
 		$logo_url = apply_filters(
 			'codesoup_options_header_logo',
-			plugins_url( 'assets/media/code-soup-logo.jpg', dirname( dirname( __DIR__ ) ) ),
+			$default_logo_url,
 			$this->manager->get_instance_key()
 		);
 

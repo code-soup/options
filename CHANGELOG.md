@@ -1,53 +1,58 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [Unreleased]
+
+### Fixed
+
+- Asset URL generation for PHP-Scoper compatibility (standalone plugin + vendor package)
+- Dual-mode URL resolution with automatic fallback
 
 ## [1.2.2] - 2026-07-06
 
 ### Added
 
-- `hide_save_button` page configuration option to hide save button per page
+- `hide_save_button` page configuration option
 
 ### Fixed
 
-- Fixed screen ID generation for top-level and submenu admin pages
-- Fixed screen matching logic in `Post_Manager::is_relevant_screen()`
+- Screen ID generation for top-level and submenu admin pages
+- Screen matching logic in `Post_Manager::is_relevant_screen()`
 
 ## [1.1.1] - 2026-06-27
 
 ### Fixed
 
-- Fixed screen ID generation for WordPress admin pages to correctly handle both top-level and submenu pages
-- Fixed screen matching logic in `Post_Manager::is_relevant_screen()` to work with updated screen IDs
+- Screen ID generation for top-level and submenu pages
+- Screen matching logic in `Post_Manager::is_relevant_screen()`
 
 ## [1.1.0] - 2026-06-09
 
 ### Breaking Changes
 
-- **Configuration structure changed to nested groups** - Old flat structure deprecated but supported via backward compatibility layer
-- **Cache system removed** - Plugin no longer implements internal caching, options read directly from database
+- Configuration structure changed to nested groups (backward compatible)
+- Cache system removed
 
 ### Added
 
-- Tabbed UI mode for organizing options pages
-- Automatic capability management - adds post type and custom page capabilities to administrator role
+- Tabbed UI mode
+- Automatic capability management
 - `Path_Helper` and `Security_Helper` utility classes
 - `Admin_Notice` utility class
-- `get_metabox_registry()` and `get_template_path()` methods to Manager class
-- `Post_Manager::regenerate_capabilities()` method to force capability refresh
+- `get_metabox_registry()` and `get_template_path()` methods
+- `Post_Manager::regenerate_capabilities()` method
 - `disable_branding` and `templates_dir` config options
-- Backward compatibility layer for old configuration structure
-- Validation for metabox page ID matching
+- Backward compatibility layer
+- Metabox page ID validation
 
 ### Changed
 
-- Refactored configuration into logical groups (menu, ui, assets)
-- Simplified data retrieval without internal cache layer
+- Configuration refactored into groups (menu, ui, assets)
+- Data retrieval simplified
 
 ### Removed
 
-- Cache system (`includes/core/class-cache.php`)
-- `cache_duration` configuration option
+- Cache system
+- `cache_duration` config option
 
 ### Migration
 
