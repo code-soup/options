@@ -32,13 +32,13 @@ class Path_Helper {
 	/**
 	 * Get plugin base URL
 	 *
-	 * Converts absolute path to URL. Works for both plugin and composer package.
+	 * Uses WordPress plugins_url() for reliable path-to-URL conversion.
+	 * Works with regular composer packages, scoped packages, and symlinked directories.
 	 *
 	 * @return string Base URL of the plugin.
 	 */
 	public static function get_base_url(): string {
-		$base_path = self::get_base_path();
-		return str_replace( ABSPATH, home_url( '/' ), $base_path );
+		return plugins_url( '', dirname( dirname( __DIR__ ) ) );
 	}
 
 	/**
@@ -48,7 +48,7 @@ class Path_Helper {
 	 * @return string Full URL to asset.
 	 */
 	public static function get_asset_url( string $relative_path ): string {
-		return self::get_base_url() . '/assets/' . ltrim( $relative_path, '/' );
+		return plugins_url( 'assets/' . ltrim( $relative_path, '/' ), dirname( dirname( __DIR__ ) ) );
 	}
 
 	/**

@@ -93,14 +93,10 @@ class Admin_Header {
 			return;
 		}
 
-		// Get base URL (works for both plugin and composer package)
-		$base_path = dirname( dirname( __DIR__ ) );
-		$base_url  = str_replace( ABSPATH, home_url( '/' ), $base_path );
-
-		// Allow custom logo URL via filter
+		// Get logo URL using WordPress plugins_url() for reliable path-to-URL conversion
 		$logo_url = apply_filters(
 			'codesoup_options_header_logo',
-			$base_url . '/assets/media/code-soup-logo.jpg',
+			plugins_url( 'assets/media/code-soup-logo.jpg', dirname( dirname( __DIR__ ) ) ),
 			$this->manager->get_instance_key()
 		);
 
