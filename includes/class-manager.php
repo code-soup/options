@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || die;
  * @see https://github.com/code-soup/codesoup-options/blob/main/docs/api.md API Reference
  *
  * @since 1.0.0
- * @version 1.2.2
+ * @version 1.3.0
  */
 class Manager {
 

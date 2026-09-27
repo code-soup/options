@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-27
+
 ### Fixed
 
 - Asset URL generation for PHP-Scoper compatibility (standalone plugin + vendor package)
