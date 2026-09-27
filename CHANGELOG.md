@@ -6,6 +6,7 @@
 
 ### Fixed
 
+- Tabs mode save button not shown when page configuration loads successfully (inverted condition in tab form template)
 - Asset URL generation for PHP-Scoper compatibility (standalone plugin + vendor package)
 - Dual-mode URL resolution with automatic fallback
 

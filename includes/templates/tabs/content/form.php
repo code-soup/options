@@ -56,9 +56,8 @@ defined( 'ABSPATH' ) || die;
 	do_meta_boxes( $screen_id, 'normal', $post );
 	do_meta_boxes( $screen_id, 'advanced', $post );
 
-	// Check if current page has hide_save_button enabled
-	if ( ! $current_page && $current_page->hide_save_button )
-	{
+	// Show save actions unless this page hides the button.
+	if ( ! $current_page || ! $current_page->hide_save_button ) {
 		printf(
 			'<div class="codesoup-save-actions">%s</div>',
 			get_submit_button( __( 'Save Changes', 'codesoup-options' ), 'primary large', 'submit', false )
