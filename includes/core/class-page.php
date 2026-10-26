@@ -85,6 +85,6 @@ class Page {
 		$this->description      = isset( $args['description'] )
 			? sanitize_text_field( $args['description'] )
 			: null;
-		$this->hide_save_button = $args['hide_save_button'] ?? false;
+		$this->hide_save_button = (bool) ( $args['hide_save_button'] ?? false );
 	}
 }
