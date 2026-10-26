@@ -507,6 +507,7 @@ array(
 **Hide Save Button:**
 - Set `hide_save_button` to `true` to hide the save button for a specific page
 - Useful for read-only pages or pages with custom save handlers
+- When enabled, the framework blocks standard save paths (tabs form, pages mode post save, `Manager::save_options()`, and ACF sync) for that page
 - Default: `false` (save button is shown)
 
 ---

@@ -96,6 +96,14 @@ class Form_Handler {
 			);
 		}
 
+		if ( ! $this->manager->is_page_save_allowed( $page_id ) ) {
+			wp_die(
+				esc_html__( 'Saving is disabled for this page.', 'codesoup-options' ),
+				esc_html__( 'Error', 'codesoup-options' ),
+				array( 'response' => 403 )
+			);
+		}
+
 		do_action(
 			'save_post',
 			$post_id,
