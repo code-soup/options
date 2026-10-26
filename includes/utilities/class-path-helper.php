@@ -61,11 +61,22 @@ class Path_Helper {
 	 * @return bool True if standalone plugin, false if vendor package.
 	 */
 	private static function is_standalone_plugin( string $package_root ): bool {
-		// Check if path contains 'vendor' directory
+		// Match composer vendor directories by path segment (not substring).
 		// Standalone: /plugins/codesoup-options/
 		// Vendor:     /plugins/my-plugin/vendor/codesoup/options/
 		// Scoped:     /plugins/my-plugin/vendor-prefixed/codesoup/options/
-		return strpos( $package_root, '/vendor' ) === false;
+		$normalized = function_exists( 'wp_normalize_path' )
+			? wp_normalize_path( $package_root )
+			: str_replace( '\\', '/', $package_root );
+		$segments   = explode( '/', trim( $normalized, '/' ) );
+
+		foreach ( $segments as $segment ) {
+			if ( 'vendor' === $segment || 'vendor-prefixed' === $segment ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
