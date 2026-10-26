@@ -51,6 +51,7 @@ class Hook_Registry {
 		add_filter( 'parent_file', array( $this, 'set_parent_file' ) );
 		add_filter( 'submenu_file', array( $this, 'set_submenu_file' ) );
 		add_filter( 'wp_insert_post_data', array( $this, 'prevent_title_update' ), 10, 2 );
+		add_filter( 'wp_insert_post_data', array( $this, 'prevent_save_on_read_only_page' ), 10, 2 );
 
 		// Register metaboxes
 		$metabox_registry = $this->manager->get_metabox_registry();
@@ -243,6 +244,37 @@ class Hook_Registry {
 		if ( $original_post ) {
 			$data['post_title'] = $original_post->post_title;
 		}
+
+		return $data;
+	}
+
+	/**
+	 * Prevent persisting content changes on read-only options pages
+	 *
+	 * @param array $data    An array of slashed post data.
+	 * @param array $postarr An array of sanitized post data.
+	 * @return array Unmodified post data when saves are disabled for the page.
+	 */
+	public function prevent_save_on_read_only_page( array $data, array $postarr ): array {
+		if ( ! isset( $postarr['ID'] ) || ! isset( $data['post_type'] ) ) {
+			return $data;
+		}
+
+		if ( $data['post_type'] !== $this->manager->get_post_type() ) {
+			return $data;
+		}
+
+		if ( $this->manager->is_post_save_allowed( (int) $postarr['ID'] ) ) {
+			return $data;
+		}
+
+		$original_post = get_post( (int) $postarr['ID'] );
+		if ( ! $original_post ) {
+			return $data;
+		}
+
+		$data['post_content'] = $original_post->post_content;
+		$data['post_excerpt'] = $original_post->post_excerpt;
 
 		return $data;
 	}

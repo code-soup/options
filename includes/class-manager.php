@@ -299,6 +299,16 @@ class Manager {
 				);
 			}
 
+			if ( ! $this->is_post_save_allowed( $post_id ) ) {
+				throw new \InvalidArgumentException(
+					sprintf(
+						/* translators: %d: post ID */
+						__( 'Saving is disabled for options post %d.', 'codesoup-options' ),
+						$post_id
+					)
+				);
+			}
+
 			$serialized = maybe_serialize( $data );
 
 			// Use direct database update to avoid triggering save_post hooks
@@ -911,6 +921,41 @@ class Manager {
 	 */
 	public function get_page( string $page_id ): ?Page {
 		return $this->pages[ $page_id ] ?? null;
+	}
+
+	/**
+	 * Whether saves are allowed for a registered page
+	 *
+	 * @param string $page_id Page identifier.
+	 * @return bool True when saves are permitted.
+	 */
+	public function is_page_save_allowed( string $page_id ): bool {
+		$page = $this->get_page( $page_id );
+		if ( ! $page ) {
+			return true;
+		}
+
+		return ! $page->hide_save_button;
+	}
+
+	/**
+	 * Whether saves are allowed for an options post
+	 *
+	 * @param int $post_id Options post ID.
+	 * @return bool True when saves are permitted.
+	 */
+	public function is_post_save_allowed( int $post_id ): bool {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return true;
+		}
+
+		$page_id = $this->post_manager->extract_page_id_from_post_name( $post->post_name );
+		if ( ! $page_id ) {
+			return true;
+		}
+
+		return $this->is_page_save_allowed( $page_id );
 	}
 
 	/**
