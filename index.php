@@ -17,6 +17,7 @@ defined( 'ABSPATH' ) || die;
  * Description:       Framework-agnostic WordPress options manager using custom post types to store data. Supports multiple instances, ACF, custom metaboxes, and extensible integrations.
  * Version:           1.3.0
  * Requires at least: 6.0
+ * Tested up to:      7.1
  * Requires PHP:      7.4
  * Author:            Code Soup
  * Author URI:        https://www.codesoup.co

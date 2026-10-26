@@ -150,7 +150,7 @@ class Admin_Header {
 			'codesoup-options-header',
 			Path_Helper::get_asset_url( 'css/admin-header.css' ),
 			array(),
-			'1.3.0'
+			Plugin_Metadata::VERSION
 		);
 	}
 }
