@@ -21,7 +21,7 @@ Manage WordPress options using custom post types instead of the wp_options table
 ## Requirements
 
 - PHP >= 7.4 (see `Requires PHP` in `index.php`)
-- WordPress >= 6.0, tested up to 6.8 (see `readme.txt` for WordPress.org metadata)
+- WordPress >= 6.0, tested up to 7.1 (latest stable branch; see `readme.txt`)
 - Optional: ACF, CMB2, MetaBox.io, or Carbon Fields
 
 ## Installation

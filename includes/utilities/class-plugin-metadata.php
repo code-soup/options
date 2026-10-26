@@ -30,9 +30,9 @@ final class Plugin_Metadata {
 	public const WP_REQUIRED = '6.0';
 
 	/**
-	 * Highest WordPress version verified in QA (major.minor).
+	 * Highest WordPress branch verified in QA (major.minor; matches readme.txt).
 	 */
-	public const WP_TESTED = '6.8';
+	public const WP_TESTED = '7.1';
 
 	/**
 	 * Minimum PHP version.

@@ -2,7 +2,7 @@
 Contributors: codesoup
 Tags: options, settings, custom post type, acf, metabox, admin
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.3.0
 License: GPLv3 or later
