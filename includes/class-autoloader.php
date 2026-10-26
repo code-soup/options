@@ -112,6 +112,7 @@ class Autoloader {
 			'Path_Helper'         => 'utilities/Path_Helper',
 			'Security_Helper'     => 'utilities/Security_Helper',
 			'Migration'           => 'utilities/Migration',
+			'Plugin_Metadata'     => 'utilities/Plugin_Metadata',
 		);
 
 		if ( isset( $class_mapping[ $relative_class ] ) ) {
