@@ -84,17 +84,8 @@ use CodeSoup\Options\Manager;
 function update_site_settings( $data ) {
 	$manager = Manager::get( 'site_settings' );
 
-	// Get the post ID for the page
-	$pages = $manager->get_pages();
-	$general_page = null;
-	foreach ( $pages as $page ) {
-		if ( 'general' === $page->get_id() ) {
-			$general_page = $page;
-			break;
-		}
-	}
-
-	if ( ! $general_page ) {
+	$post = $manager->get_post_by_page_id( 'general' );
+	if ( ! $post ) {
 		return new WP_Error( 'page_not_found', 'General page not found' );
 	}
 
@@ -107,8 +98,8 @@ function update_site_settings( $data ) {
 	// Save
 	return $manager->save_options(
 		array(
-			'post_id' => $general_page->get_post_id(),
-			'nonce'   => wp_create_nonce( 'update-post_' . $general_page->get_post_id() ),
+			'post_id' => $post->ID,
+			'nonce'   => wp_create_nonce( 'update-post_' . $post->ID ),
 			'data'    => $sanitized,
 		)
 	);

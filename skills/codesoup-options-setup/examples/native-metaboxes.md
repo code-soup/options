@@ -10,7 +10,9 @@ use CodeSoup\Options\Manager;
 $manager = Manager::create(
 	'site_settings',
 	array(
-		'menu_label'   => 'Site Settings',
+		'menu'         => array(
+			'label' => 'Site Settings',
+		),
 		'integrations' => array(
 			'acf' => array( 'enabled' => false ),
 		),
