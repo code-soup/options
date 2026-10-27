@@ -1,6 +1,11 @@
 ---
-name: CodeSoup Options Usage
+name: codesoup-options-usage
 description: Retrieve and save WordPress options using CodeSoup Options Manager API. Get single options, bulk options, use in templates. Complete API reference for Manager methods including create, get, save_options, get_options, get_option, register_page, register_pages, register_metabox, can_edit_page, get_config, init.
+license: GPL-3.0-or-later
+metadata:
+  author: code-soup
+  version: "1.1.0"
+  package: codesoup/options
 ---
 
 # CodeSoup Options Usage
@@ -33,7 +38,7 @@ $site_tagline = $options['site_tagline'] ?? '';
 
 ### Get Single Option
 
-Uses ACF's `get_field()` if ACF is enabled, otherwise retrieves from post_content:
+Uses the **active integration** (default: ACF). With ACF enabled, this calls `get_field()` on the options post. With ACF disabled, `get_option()` returns the default unless you add a custom integration that implements `get_option()`. **For native metaboxes, use `get_options()` and array access:**
 
 ```php
 $manager = Manager::get( 'theme_settings' );
@@ -364,16 +369,19 @@ $site_email = $options['site_email'] ?? '';
 
 ---
 
-#### `get_option( string $page_id, string $key, mixed $default = null ): mixed`
+#### `get_option( string $page_id, string $field_name, mixed $default = null, string $integration = 'acf' ): mixed`
 
-Get a single option value. Uses ACF's `get_field()` if ACF is enabled, otherwise retrieves from post_content.
+Get a single field via an integration (default **ACF**). Does not read arbitrary keys from `post_content` when ACF is off.
 
 **Parameters:**
 - `$page_id` - Page identifier
-- `$key` - Option key
+- `$field_name` - Field name (ACF field name when using default integration)
 - `$default` - Default value if not found
+- `$integration` - Integration key (default `'acf'`)
 
-**Returns:** Option value or default
+**Returns:** Field value or default
+
+**Native metaboxes:** use `get_options( $page_id )[ 'key' ] ?? $default` instead.
 
 **Example:**
 
@@ -421,7 +429,7 @@ Get all registered pages.
 ```php
 $pages = $manager->get_pages();
 foreach ( $pages as $page ) {
-	echo $page->get_id() . ': ' . $page->get_title();
+	echo $page->id . ': ' . $page->title;
 }
 ```
 
@@ -481,15 +489,26 @@ $manager->init(); // Must call this
 
 ---
 
-#### `destroy(): void`
+#### `Manager::destroy( string $instance_key ): bool`
 
-Destroy the manager instance and clean up resources.
+Destroy a manager instance and clean up resources.
 
 **Example:**
 
 ```php
-$manager = Manager::get( 'theme_settings' );
-$manager->destroy();
+Manager::destroy( 'theme_settings' );
+```
+
+---
+
+#### `get_post_by_page_id( string $page_id ): ?\WP_Post`
+
+Get the WordPress post that stores options for a registered page ID.
+
+**Example:**
+
+```php
+$post = $manager->get_post_by_page_id( 'general' );
 ```
 
 ---
@@ -581,17 +600,8 @@ use CodeSoup\Options\Manager;
 function update_site_settings( $data ) {
 	$manager = Manager::get( 'site_settings' );
 
-	// Get the post ID for the page
-	$pages = $manager->get_pages();
-	$general_page = null;
-	foreach ( $pages as $page ) {
-		if ( 'general' === $page->get_id() ) {
-			$general_page = $page;
-			break;
-		}
-	}
-
-	if ( ! $general_page ) {
+	$post = $manager->get_post_by_page_id( 'general' );
+	if ( ! $post ) {
 		return new WP_Error( 'page_not_found', 'General page not found' );
 	}
 
@@ -601,11 +611,11 @@ function update_site_settings( $data ) {
 		'site_email' => sanitize_email( $data['site_email'] ?? '' ),
 	);
 
-	// Save
+	// Save (programmatic saves must still pass a valid post update nonce)
 	return $manager->save_options(
 		array(
-			'post_id' => $general_page->get_post_id(),
-			'nonce'   => wp_create_nonce( 'update-post_' . $general_page->get_post_id() ),
+			'post_id' => $post->ID,
+			'nonce'   => wp_create_nonce( 'update-post_' . $post->ID ),
 			'data'    => $sanitized,
 		)
 	);

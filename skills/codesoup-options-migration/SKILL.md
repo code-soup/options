@@ -4,7 +4,7 @@ description: Migrate CodeSoup Options configuration when changing post_type, pre
 license: GPL-3.0-or-later
 metadata:
   author: code-soup
-  version: "1.0.0"
+  version: "1.1.0"
   package: codesoup/options
 ---
 
@@ -59,6 +59,9 @@ Create a WP-CLI command file:
 
 ```php
 // wp-content/plugins/your-plugin/cli/migrate-options.php
+
+use CodeSoup\Options\Manager;
+use CodeSoup\Options\Migration;
 
 if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	return;
@@ -128,13 +131,10 @@ After successful migration:
 2. **Clear WordPress cache (if object cache enabled):**
 
 ```php
-// Clear WordPress object cache (Redis/Memcached)
 wp_cache_flush();
-
-// Clear transients
-delete_option( '_transient_timeout_*' );
-delete_option( '_transient_*' );
 ```
+
+WordPress does not support wildcard `delete_option()` for transients. Delete specific transients you created, or use a maintenance plugin / WP-CLI if you need a full transient purge.
 
 3. **Update documentation** - Document the new configuration for your team
 
@@ -234,7 +234,7 @@ array(
 
 ### Migration Returns "No posts found to migrate"
 
-**Cause:** The old post_type doesn't exist or has no posts.
+**Cause:** The old post_type doesn't exist or has no posts. The return array may still have `'success' => true` with an `'error'` message set — treat missing posts as a failure in your script.
 
 **Solution:**
 1. Verify old post_type exists: `wp post list --post_type=old_options`

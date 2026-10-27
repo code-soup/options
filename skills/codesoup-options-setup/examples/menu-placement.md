@@ -10,9 +10,11 @@ use CodeSoup\Options\Manager;
 Manager::create(
 	'main_options',
 	array(
-		'menu_label'    => 'Main Options',
-		'menu_icon'     => 'dashicons-admin-settings',
-		'menu_position' => 50,
+		'menu' => array(
+			'label'    => 'Main Options',
+			'icon'     => 'dashicons-admin-settings',
+			'position' => 50,
+		),
 	)
 );
 ```
@@ -25,8 +27,10 @@ use CodeSoup\Options\Manager;
 Manager::create(
 	'site_settings',
 	array(
-		'menu_label'  => 'Site Settings',
-		'parent_menu' => 'options-general.php',
+		'menu' => array(
+			'label'  => 'Site Settings',
+			'parent' => 'options-general.php',
+		),
 	)
 );
 ```
@@ -39,8 +43,10 @@ use CodeSoup\Options\Manager;
 Manager::create(
 	'theme_options',
 	array(
-		'menu_label'  => 'Theme Options',
-		'parent_menu' => 'themes.php',
+		'menu' => array(
+			'label'  => 'Theme Options',
+			'parent' => 'themes.php',
+		),
 	)
 );
 ```
@@ -61,6 +67,6 @@ Manager::create(
 
 ## Notes
 
-- When `parent_menu` is set, `menu_icon` and `menu_position` are ignored
+- When `menu.parent` is set, `menu.icon` and `menu.position` are ignored
 - User must have capability for at least one page to see the menu
-
+- Flat keys `menu_label` / `parent_menu` still work but are deprecated (see `docs/migration-v1.1.md`)

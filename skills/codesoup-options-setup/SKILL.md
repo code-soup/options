@@ -1,6 +1,11 @@
 ---
-name: CodeSoup Options Setup
+name: codesoup-options-setup
 description: Set up and configure CodeSoup Options plugin for WordPress. Create options pages using ACF (Advanced Custom Fields), native metaboxes, CodeSoup Metabox Schema, or custom integrations (CMB2, MetaBox.io, Carbon Fields). Configure menu placement, post types, capabilities, integrations, tabbed UI mode, and styles.
+license: GPL-3.0-or-later
+metadata:
+  author: code-soup
+  version: "1.1.0"
+  package: codesoup/options
 ---
 
 # CodeSoup Options Setup
@@ -316,21 +321,26 @@ class CMB2 implements IntegrationInterface {
 		$pages = $this->manager->get_pages();
 		$config = $this->manager->get_config();
 
+		$post_manager = $this->manager->get_post_manager();
+
 		foreach ( $pages as $page ) {
+			// post_name uses prefix + page id with underscore→dash rules (see Post_Manager).
+			$post_name = $post_manager->get_post_name( $page->id );
+
 			$cmb = new_cmb2_box(
 				array(
-					'id'           => $config['prefix'] . $page->get_id(),
-					'title'        => $page->get_title(),
+					'id'           => $config['prefix'] . $page->id,
+					'title'        => $page->title,
 					'object_types' => array( $config['post_type'] ),
 					'show_on'      => array(
 						'key'   => 'post_name',
-						'value' => $config['prefix'] . $page->get_id(),
+						'value' => $post_name,
 					),
 				)
 			);
 
 			// Add fields based on page ID
-			if ( 'general' === $page->get_id() ) {
+			if ( 'general' === $page->id ) {
 				$cmb->add_field(
 					array(
 						'name' => 'Site Title',
@@ -407,14 +417,14 @@ array(
 	// Core settings
 	'post_type'      => 'cs_options',        // Custom post type name
 	'prefix'         => 'cs_opt_',           // Post slug prefix
-	'revisions'      => true,                // Enable revision history
+	'revisions'      => false,               // Enable revision history (default false)
 	'debug'          => false,               // Enable error logging
 
 	// Menu configuration
 	'menu'           => array(
 		'label'    => 'Options',                  // Admin menu label
 		'icon'     => 'dashicons-admin-generic',  // Dashicon or URL
-		'position' => 80,                         // Menu position (1-100)
+		'position' => 99,                         // Menu position (1-100)
 		'parent'   => null,                       // Parent menu slug for submenu
 	),
 
@@ -534,7 +544,7 @@ Manager::create(
 
 - **`false`** (default): All logging disabled
 - **`true`**: Errors, warnings, and info messages logged via Logger class
-- Debug messages only logged when both `debug` is `true` AND `WP_DEBUG` is enabled
+- `Logger::debug()` messages additionally require `WP_DEBUG` to be enabled
 
 ### Disable Styles and Scripts
 
