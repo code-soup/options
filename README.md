@@ -34,6 +34,8 @@ composer require codesoup/options
 
 ### As WordPress Plugin
 
+**Production branch (plugin files only, no dev tooling):** clone or download the [`production`](https://github.com/code-soup/options/tree/production) branch, or run the [production deploy workflow](docs/wordpress-plugin-deploy.md) after merging to `master`.
+
 1. Download and extract to `wp-content/plugins/codesoup-options`
 2. Activate the plugin
 3. Add configuration to your theme or plugin
