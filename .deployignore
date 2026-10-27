@@ -1,0 +1,26 @@
+# Exclusions applied after production-files are copied (see wp-plugin-production-deploy).
+# Repository / package dev files — not needed in standalone WordPress plugin installs.
+
+.github/
+skills/
+docs/
+
+# PHP tooling (Composer dev dependencies only in this package)
+composer.json
+composer.lock
+vendor/
+phpcs.xml
+.editorconfig
+.gitignore
+.gitattributes
+.deployignore
+
+# Node (build stub only)
+package.json
+package-lock.json
+node_modules/
+
+# Logs and OS junk
+*.log
+.DS_Store
+Thumbs.db
