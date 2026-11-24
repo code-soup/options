@@ -115,6 +115,7 @@ Each skill follows the Agent Skills specification with optional examples directo
 ```
 skills/
 ├── README.md (this file)
+├── AUDIT.md (accuracy review log)
 ├── codesoup-options-setup/
 │   ├── SKILL.md
 │   └── examples/
@@ -190,7 +191,7 @@ Each SKILL.md file follows the Agent Skills specification:
 
 ### Design Principles
 
-- **Self-contained**: All information inline, no external references
+- **Self-contained**: Task-focused content in SKILL.md; link to `docs/` for deep reference when needed
 - **Task-oriented**: Focus on "how to accomplish X"
 - **Progressive disclosure**: Start simple, add detail as needed
 - **Portable**: Works whether in vendor/, workspace/, or anywhere else

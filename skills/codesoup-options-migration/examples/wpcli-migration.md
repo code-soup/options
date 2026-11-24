@@ -7,6 +7,9 @@ Running migrations via WP-CLI (recommended approach).
 ```php
 // wp-content/plugins/your-plugin/cli/migrate-options.php
 
+use CodeSoup\Options\Manager;
+use CodeSoup\Options\Migration;
+
 if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	return;
 }
@@ -14,9 +17,6 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 WP_CLI::add_command(
 	'options migrate',
 	function( $args, $assoc_args ) {
-		use CodeSoup\Options\Migration;
-		use CodeSoup\Options\Manager;
-
 		WP_CLI::log( 'Starting migration...' );
 
 		// Initialize Manager with NEW configuration

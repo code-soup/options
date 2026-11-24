@@ -60,20 +60,22 @@ class CMB2 implements IntegrationInterface {
 		$config = $this->manager->get_config();
 
 		foreach ( $pages as $page ) {
+			$post_name = $this->manager->get_post_manager()->get_post_name( $page->id );
+
 			$cmb = new_cmb2_box(
 				array(
-					'id'           => $config['prefix'] . $page->get_id(),
-					'title'        => $page->get_title(),
+					'id'           => $config['prefix'] . $page->id,
+					'title'        => $page->title,
 					'object_types' => array( $config['post_type'] ),
 					'show_on'      => array(
 						'key'   => 'post_name',
-						'value' => $config['prefix'] . $page->get_id(),
+						'value' => $post_name,
 					),
 				)
 			);
 
 			// Add fields based on page ID
-			if ( 'general' === $page->get_id() ) {
+			if ( 'general' === $page->id ) {
 				$cmb->add_field(
 					array(
 						'name' => 'Site Title',
