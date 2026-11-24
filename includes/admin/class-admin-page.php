@@ -215,7 +215,7 @@ class Admin_Page {
 				'codesoup-options-tabs',
 				Path_Helper::get_asset_url( 'css/admin-tabs.css' ),
 				array(),
-				'1.2.0'
+				'1.3.0'
 			);
 		}
 
@@ -225,7 +225,7 @@ class Admin_Page {
 				'codesoup-options-tabs',
 				Path_Helper::get_asset_url( 'js/admin-tabs.js' ),
 				array( 'jquery' ),
-				'1.2.0',
+				'1.3.0',
 				true
 			);
 		}
