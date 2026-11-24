@@ -110,6 +110,8 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 package-lock.json
+# Required for wp-plugin-production-deploy (npm ci)
+!package-lock.json
 
 # dotenv environment variables file
 .env

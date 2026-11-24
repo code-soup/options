@@ -1,0 +1,8 @@
+{
+	"name": "codesoup-options",
+	"private": true,
+	"description": "Build stub for wp-plugin-production-deploy (no frontend compile step)",
+	"scripts": {
+		"build:prod": "node -e \"process.exit(0)\""
+	}
+}
