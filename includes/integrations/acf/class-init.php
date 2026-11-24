@@ -185,6 +185,10 @@ class Init implements IntegrationInterface {
 			return;
 		}
 
+		if ( ! $this->manager->is_post_save_allowed( (int) $post_id ) ) {
+			return;
+		}
+
 		if ( ! function_exists( 'get_fields' ) ) {
 			return;
 		}
