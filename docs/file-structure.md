@@ -3,6 +3,8 @@
 ## Directory Organization
 
 ```
+readme.txt                        # WordPress.org plugin metadata (stable tag, tested up to)
+index.php                         # Standalone plugin bootstrap and header fields
 includes/
 ├── class-autoloader.php          # Main autoloader with directory mapping
 ├── class-manager.php             # Core manager class
@@ -21,7 +23,8 @@ includes/
 │
 ├── utilities/                     # Utility classes
 │   ├── class-admin-notice.php    # Admin notice renderer
-│   └── class-migration.php       # Migration helper
+│   ├── class-migration.php       # Migration helper
+│   └── class-plugin-metadata.php # Version and requirement constants
 │
 ├── integrations/                  # Field framework integrations
 │   ├── integration-interface.php

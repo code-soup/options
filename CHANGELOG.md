@@ -4,6 +4,11 @@
 
 ## [1.3.0] - 2026-09-27
 
+### Changed
+
+- WordPress plugin metadata: `readme.txt`, `Tested up to` header, and `Plugin_Metadata` constants for version and requirements
+- Admin asset enqueue versions aligned with plugin release version
+
 ### Fixed
 
 - Tabs mode save button not shown when page configuration loads successfully (inverted condition in tab form template)
