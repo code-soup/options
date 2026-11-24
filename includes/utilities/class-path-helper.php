@@ -75,6 +75,7 @@ class Path_Helper {
 	 * @return bool True if standalone plugin, false if vendor package.
 	 */
 	private static function is_standalone_plugin( string $package_root ): bool {
+		// Match composer vendor directories by path segment (not substring).
 		$normalized = self::normalize_path( $package_root );
 		$segments   = explode( '/', trim( $normalized, '/' ) );
 
