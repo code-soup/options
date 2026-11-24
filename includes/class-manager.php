@@ -7,6 +7,8 @@
 
 namespace CodeSoup\Options;
 
+use CodeSoup\Options\Integrations\ACF\Location;
+
 // Don't allow direct access to file.
 defined( 'ABSPATH' ) || die;
 
@@ -379,13 +381,7 @@ class Manager {
 
 		$instance = self::$instances[ $instance_key ];
 
-		// Clear ACF Location static registry for this instance.
-		if ( isset( $instance->integrations['acf'] ) ) {
-			$acf_integration = $instance->integrations['acf'];
-			if ( method_exists( $acf_integration, 'clear_location_registry' ) ) {
-				$acf_integration->clear_location_registry( $instance_key );
-			}
-		}
+		Location::unregister_instance( $instance_key );
 
 		unset( self::$instances[ $instance_key ] );
 		return true;

@@ -51,6 +51,22 @@ class Location extends \ACF_Location {
 	}
 
 	/**
+	 * Remove instance configuration from the static registry.
+	 *
+	 * @param string $instance_key Manager instance key.
+	 * @return void
+	 */
+	public static function unregister_instance( string $instance_key ): void {
+		$sanitized_key = sanitize_key( $instance_key );
+
+		if ( empty( $sanitized_key ) ) {
+			$sanitized_key = 'default';
+		}
+
+		unset( self::$instance_registry[ $sanitized_key ] );
+	}
+
+	/**
 	 * Initialize the location type
 	 *
 	 * @return void
