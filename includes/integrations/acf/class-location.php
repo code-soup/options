@@ -129,9 +129,34 @@ class Location extends \ACF_Location {
 			return false;
 		}
 
+		if ( ! self::is_registered_options_post( $post ) ) {
+			return false;
+		}
+
 		$matches = ( $post->post_name === $rule['value'] );
 
 		return $this->compare( $matches, $rule );
+	}
+
+	/**
+	 * Whether the post belongs to a loaded Manager options CPT.
+	 *
+	 * @param \WP_Post $post Post object.
+	 * @return bool
+	 */
+	private static function is_registered_options_post( \WP_Post $post ): bool {
+		foreach ( Manager::get_all() as $manager ) {
+			if ( $post->post_type !== $manager->get_post_type() ) {
+				continue;
+			}
+
+			$page_id = $manager->get_post_manager()->extract_page_id_from_post_name( $post->post_name );
+			if ( null !== $page_id ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
