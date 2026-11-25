@@ -88,6 +88,24 @@ class Form_Handler {
 			);
 		}
 
+		$post = get_post( $post_id );
+		if ( ! $post || $post->post_type !== $this->manager->get_post_type() ) {
+			wp_die(
+				esc_html__( 'Invalid options post.', 'codesoup-options' ),
+				esc_html__( 'Error', 'codesoup-options' ),
+				array( 'response' => 400 )
+			);
+		}
+
+		$expected_post = $this->manager->get_post_by_page_id( $page_id );
+		if ( ! $expected_post || (int) $expected_post->ID !== $post_id ) {
+			wp_die(
+				esc_html__( 'Post ID does not match the submitted page.', 'codesoup-options' ),
+				esc_html__( 'Error', 'codesoup-options' ),
+				array( 'response' => 400 )
+			);
+		}
+
 		if ( ! $this->manager->can_edit_page( $post_id ) ) {
 			wp_die(
 				esc_html__( 'You do not have permission to edit this page.', 'codesoup-options' ),
